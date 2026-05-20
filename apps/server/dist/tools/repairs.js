@@ -1,0 +1,124 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.registerRepairTools = registerRepairTools;
+const uuid_1 = require("uuid");
+const index_js_1 = require("../schemas/index.js");
+const storage_js_1 = require("../services/storage.js");
+function registerRepairTools(server) {
+    // ADD REPAIR EXPENSE
+    server.registerTool("repair_add", {
+        title: "Add Repair Expense",
+        description: `Add a repair or maintenance expense to a property.
+
+Args:
+  - propertyId (string): ID of the property
+  - description (string): What was repaired/replaced
+  - amount (number): Cost of the repair
+  - date (string): Date of expense YYYY-MM-DD
+  - vendor (string, optional): Contractor or vendor name
+  - notes (string, optional): Additional notes
+
+Returns: The newly added repair expense.`,
+        inputSchema: index_js_1.AddRepairInputShape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    }, async ({ propertyId, description, amount, date, vendor, notes }) => {
+        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        if (!property) {
+            return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
+        }
+        const year = parseInt(date.substring(0, 4), 10);
+        const newRepair = {
+            id: (0, uuid_1.v4)(),
+            description,
+            amount,
+            date,
+            year,
+            ...(vendor !== undefined ? { vendor } : {}),
+            ...(notes !== undefined ? { notes } : {}),
+        };
+        property.repairs.push(newRepair);
+        property.updatedAt = new Date().toISOString();
+        (0, storage_js_1.saveProperty)(property);
+        return {
+            content: [{ type: "text", text: `Repair expense added to '${property.propertyName}'.\n\n${JSON.stringify(newRepair, null, 2)}` }],
+        };
+    });
+    // DELETE REPAIR EXPENSE
+    server.registerTool("repair_delete", {
+        title: "Delete Repair Expense",
+        description: `Remove a repair expense from a property.
+
+Args:
+  - propertyId (string): ID of the property
+  - repairId (string): ID of the repair expense to delete
+
+Returns: Confirmation message.`,
+        inputSchema: index_js_1.DeleteRepairInputShape,
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    }, async ({ propertyId, repairId }) => {
+        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        if (!property) {
+            return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
+        }
+        const index = property.repairs.findIndex((r) => r.id === repairId);
+        if (index === -1) {
+            return { content: [{ type: "text", text: `Error: Repair '${repairId}' not found on property '${property.propertyName}'.` }] };
+        }
+        const removed = property.repairs.splice(index, 1)[0];
+        property.updatedAt = new Date().toISOString();
+        (0, storage_js_1.saveProperty)(property);
+        return {
+            content: [{ type: "text", text: `Repair expense '${removed.description}' ($${removed.amount}) removed from '${property.propertyName}'.` }],
+        };
+    });
+    // LIST ALL REPAIRS
+    server.registerTool("repair_list", {
+        title: "List Repair Expenses",
+        description: `List all repair expenses for a property, sorted by date descending.
+
+Args:
+  - propertyId (string): ID of the property
+
+Returns: Array of repair expenses with total cost summary.`,
+        inputSchema: index_js_1.PropertyIdInputShape,
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    }, async ({ propertyId }) => {
+        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        if (!property) {
+            return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
+        }
+        const repairs = [...property.repairs].sort((a, b) => b.date.localeCompare(a.date));
+        const total = repairs.reduce((sum, r) => sum + r.amount, 0);
+        const result = { propertyName: property.propertyName, repairs, total, currency: property.currency };
+        return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+    });
+    // GET REPAIRS BY YEAR
+    server.registerTool("repair_list_by_year", {
+        title: "List Repair Expenses by Year",
+        description: `List all repair expenses for a property filtered by a specific year.
+
+Args:
+  - propertyId (string): ID of the property
+  - year (number): Year to filter by (e.g., 2024)
+
+Returns: Repair expenses for that year with total cost.`,
+        inputSchema: index_js_1.GetRepairsByYearInputShape,
+        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    }, async ({ propertyId, year }) => {
+        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        if (!property) {
+            return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
+        }
+        const repairs = property.repairs
+            .filter((r) => r.year === year)
+            .sort((a, b) => b.date.localeCompare(a.date));
+        const total = repairs.reduce((sum, r) => sum + r.amount, 0);
+        const result = { propertyName: property.propertyName, year, repairs, total, currency: property.currency };
+        return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+        };
+    });
+}
+//# sourceMappingURL=repairs.js.map

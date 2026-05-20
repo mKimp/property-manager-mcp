@@ -1,0 +1,229 @@
+{
+  "properties": {
+    "afb90f82-ec2f-40eb-92d9-a6624431ef7d": {
+      "id": "afb90f82-ec2f-40eb-92d9-a6624431ef7d",
+      "propertyName": "Portland House",
+      "address": {
+        "street": "13891 se rogers ln",
+        "city": "Clackamas",
+        "state": "OR",
+        "zip": "97015",
+        "country": "USA"
+      },
+      "rent": 2770,
+      "currency": "USD",
+      "tenants": [],
+      "leaseStart": "2023-10-28",
+      "leaseEnd": "2026-10-31",
+      "propertyManager": "Breakwater Northwest",
+      "repairs": [
+        {
+          "id": "6a2c3f78-c219-41cd-ac77-09603f03e49f",
+          "description": "Fence repair",
+          "amount": 950,
+          "date": "2026-04-01",
+          "year": 2026
+        }
+      ],
+      "rentRecords": [],
+      "createdAt": "2026-05-01T06:31:31.608Z",
+      "updatedAt": "2026-05-01T06:31:40.522Z",
+      "propertyTax": 0,
+      "utilitiesRecords": []
+    },
+    "17dcff15-fd39-430e-8186-5f14a4112132": {
+      "id": "17dcff15-fd39-430e-8186-5f14a4112132",
+      "propertyName": "Seattle Single House",
+      "address": {
+        "street": "9343 48th ave S",
+        "city": "Seattle",
+        "state": "WA",
+        "zip": "98118",
+        "country": "USA"
+      },
+      "rent": 1800,
+      "currency": "USD",
+      "tenants": [
+        {
+          "name": "Thao Nguyen",
+          "email": "thao.n@example.com",
+          "phone": "+1-217-555-0110"
+        },
+        {
+          "name": "Dat Duong",
+          "email": "dat.d@example.com",
+          "phone": "+1-217-555-0199"
+        }
+      ],
+      "leaseStart": "2025-09-01",
+      "leaseEnd": "2026-08-31",
+      "notes": "two cats. Utilities: water and electricity shared, tenant pays for internet. No smoking allowed.",
+      "repairs": [],
+      "rentRecords": [],
+      "createdAt": "2026-05-01T06:31:50.111Z",
+      "updatedAt": "2026-05-01T06:31:50.111Z",
+      "propertyTax": 0,
+      "utilitiesRecords": []
+    },
+    "b1c2dd4c-09d7-409c-81ee-be330f025c2a": {
+      "id": "b1c2dd4c-09d7-409c-81ee-be330f025c2a",
+      "propertyName": "Kent House",
+      "address": {
+        "street": "22902 112th Pl SE #1",
+        "city": "Kent",
+        "state": "WA",
+        "zip": "98031",
+        "country": "USA"
+      },
+      "rent": 4100,
+      "currency": "USD",
+      "tenants": [
+        {
+          "name": "Ramon"
+        }
+      ],
+      "leaseStart": "2026-02-01",
+      "leaseEnd": "2027-02-01",
+      "notes": "Insurance: $960.00/year (Dec 2025 – Dec 2026)",
+      "repairs": [
+        {
+          "id": "23536b89-45a8-47c6-abd5-185064d5e4f8",
+          "description": "Blockage drainage repair",
+          "amount": 2989.35,
+          "date": "2026-04-13",
+          "year": 2026
+        },
+        {
+          "id": "80a1b686-b645-46e7-9692-433d75ff77a7",
+          "description": "New refrigerator",
+          "amount": 370,
+          "date": "2026-04-01",
+          "year": 2026
+        }
+      ],
+      "rentRecords": [
+        {
+          "year": 2026,
+          "month": 2,
+          "amount": 4100,
+          "paid": true,
+          "paidDate": "2026-02-01"
+        },
+        {
+          "year": 2026,
+          "month": 3,
+          "amount": 4100,
+          "paid": true,
+          "paidDate": "2026-03-01"
+        },
+        {
+          "year": 2026,
+          "month": 4,
+          "amount": 4100,
+          "paid": true,
+          "paidDate": "2026-04-01"
+        },
+        {
+          "year": 2026,
+          "month": 5,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2026,
+          "month": 6,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2026,
+          "month": 7,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2026,
+          "month": 8,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2026,
+          "month": 9,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2026,
+          "month": 10,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2026,
+          "month": 11,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2026,
+          "month": 12,
+          "amount": 4100,
+          "paid": false
+        },
+        {
+          "year": 2027,
+          "month": 1,
+          "amount": 4100,
+          "paid": false
+        }
+      ],
+      "createdAt": "2026-05-01T06:32:02.095Z",
+      "updatedAt": "2026-05-01T06:39:58.224Z",
+      "mortgage": {
+        "monthlyPayment": 2822.81
+      },
+      "propertyTax": 0,
+      "utilitiesRecords": [
+        {
+          "year": 2026,
+          "month": 1,
+          "utilities": {
+            "electricity": 57.92,
+            "water": 39.7
+          },
+          "paid": true
+        },
+        {
+          "year": 2026,
+          "month": 2,
+          "utilities": {
+            "electricity": 405.18,
+            "water": 15.41
+          },
+          "paid": true
+        }
+      ]
+    },
+    "274150e1-d0a5-4d6d-9452-8ccf91889498": {
+      "id": "274150e1-d0a5-4d6d-9452-8ccf91889498",
+      "propertyName": "Test Property",
+      "address": {
+        "street": "111 Swhite Rd",
+        "city": "San Jose",
+        "state": "CA",
+        "zip": "00000",
+        "country": "US"
+      },
+      "rent": 1000,
+      "currency": "USD",
+      "tenants": [],
+      "repairs": [],
+      "rentRecords": [],
+      "createdAt": "2026-05-01T06:39:10.037Z",
+      "updatedAt": "2026-05-01T06:39:10.037Z",
+      "propertyTax": 0,
+      "utilitiesRecords": []
+    }
+  }
+}
