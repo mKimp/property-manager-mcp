@@ -119,9 +119,9 @@ property-manager-mcp/
 - [x] Complete Utilities tools: `utilities_update_record`, `utilities_list_by_year`, `utilities_list_all`
 - [x] Reorganize into monorepo: move existing `src/` into `apps/server/`, set up npm workspaces root `package.json`
 - [x] `git init` in monorepo root, make initial commit of current state (`main` branch)
-- [ ] Provision Turso database (free tier) — get `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
-- [ ] Initialize Prisma with `@prisma/adapter-libsql` — write `prisma/schema.prisma` (Property, Tenant, RepairExpense, RentRecord, UtilitiesRecord)
-- [ ] Run initial `npx prisma migrate dev --name init` — creates migration file and applies it directly to Turso (no local DB)
+- [x] Provision Turso database (free tier) — get `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
+- [x] Initialize Prisma with `@prisma/adapter-libsql` — write `prisma/schema.prisma` (Property, Tenant, RepairExpense, RentRecord, UtilitiesRecord)
+- [x] Run initial `npx prisma migrate dev --name init` — creates migration file and applies it directly to Turso (no local DB)
 - [ ] Migrate data layer: replace `src/services/storage.ts` JSON reads/writes with Prisma client calls
 - [ ] Delete `data/properties.json` and `src/services/storage.ts` once Prisma migration is complete
 - [ ] Add Express HTTP server layer (`apps/server/src/server.ts`) wrapping MCP tools as REST endpoints
