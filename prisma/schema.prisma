@@ -1,0 +1,97 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id              String   @id
+  propertyName    String
+  // Address (flattened)
+  street          String
+  city            String
+  state           String
+  zip             String
+  country         String
+  rent            Float
+  currency        String   @default("USD")
+  leaseStart      String?
+  leaseEnd        String?
+  propertyManager String?
+  notes           String?
+  propertyTax     Float?
+  // Mortgage (flattened, all optional)
+  mortgageLender        String?
+  mortgageMonthlyPayment Float?
+  mortgageInterestRate  Float?
+  mortgageTermYears     Int?
+  mortgageStartDate     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenants          Tenant[]
+  repairs          RepairExpense[]
+  rentRecords      RentRecord[]
+  utilitiesRecords UtilitiesRecord[]
+}
+
+model Tenant {
+  id         String   @id @default(uuid())
+  propertyId String
+  name       String
+  email      String?
+  phone      String?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model RepairExpense {
+  id          String  @id
+  propertyId  String
+  description String
+  amount      Float
+  date        String
+  year        Int
+  vendor      String?
+  notes       String?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model RentRecord {
+  id         String  @id @default(uuid())
+  propertyId String
+  year       Int
+  month      Int
+  amount     Float
+  paid       Boolean @default(false)
+  paidDate   String?
+  notes      String?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, year, month])
+}
+
+model UtilitiesRecord {
+  id          String  @id @default(uuid())
+  propertyId  String
+  year        Int
+  month       Int
+  electricity Float?
+  water       Float?
+  gas         Float?
+  internet    Float?
+  trash       Float?
+  paid        Boolean @default(false)
+  paidDate    String?
+  notes       String?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, year, month])
+}

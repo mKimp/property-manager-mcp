@@ -300,9 +300,9 @@ Then restart Claude Desktop.
 | [x] | `utilities_add_record` tool |
 | [x] | Complete utilities tools (update, list_by_year, list_all) |
 | [x] | Reorganize into monorepo (`apps/server/`, `apps/client/`, workspaces root) |
-| [ ] | `git init`, initial commit on `main` |
+| [x] | `git init`, initial commit on `main` |
 | [ ] | Provision Turso DB — get `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` |
-| [ ] | Prisma schema (`prisma/schema.prisma`) with `@prisma/adapter-libsql` |
+| [/] | Prisma schema (`prisma/schema.prisma`) with `@prisma/adapter-libsql` |
 | [ ] | `prisma migrate dev` against Turso cloud DB |
 | [ ] | Migrate data layer: replace `storage.ts` JSON layer with Prisma client |
 | [ ] | Delete `data/properties.json` and `src/services/storage.ts` |
