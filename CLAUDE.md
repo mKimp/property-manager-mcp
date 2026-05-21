@@ -1,6 +1,6 @@
 # CLAUDE.md — Property Manager MCP: Single Source of Truth
 
-> **AI Guardrail:** If a feature request, schema change, or UI requirement is ambiguous or lacks explicit detail, **do not guess**. Stop and ask for clarification before writing code. Always update the **Current Status Board** when a task is completed.
+> **AI Guardrail:** If a feature request, schema change, or UI requirement is ambiguous or lacks explicit detail, **do not guess**. Stop and ask for clarification before writing code. Always update the **Phase checklist in Section 4** when a task is completed.
 
 ---
 
@@ -280,97 +280,7 @@ Then restart Claude Desktop.
 
 ---
 
-## 5. Current Status Board
-
-> Update this section every time a task moves state. Format: `[ ]` To Do · `[/]` In Progress · `[x]` Done.
-
-### Phase 1 — Local Monorepo & Database Setup
-
-| Status | Task |
-|---|---|
-| [x] | Project scoping and architecture definition |
-| [x] | TypeScript project initialization |
-| [x] | MCP server boilerplate (`src/index.ts`) |
-| [x] | Core domain types (`src/types.ts`) |
-| [x] | Zod input schemas (`src/schemas/index.ts`) |
-| [x] | JSON persistence layer (`src/services/storage.ts`) |
-| [x] | Property tools (list, get, add, update, search, delete) |
-| [x] | Repair tools (add, delete, list, list_by_year) |
-| [x] | Rent tools (add, update, list_by_year, list_all) |
-| [x] | `utilities_add_record` tool |
-| [x] | Complete utilities tools (update, list_by_year, list_all) |
-| [x] | Reorganize into monorepo (`apps/server/`, `apps/client/`, workspaces root) |
-| [x] | `git init`, initial commit on `main` |
-| [x] | Provision Turso DB — get `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` |
-| [x] | Prisma schema (`prisma/schema.prisma`) with `@prisma/adapter-libsql` |
-| [x] | `prisma migrate dev` against Turso cloud DB |
-| [ ] | Migrate data layer: replace `storage.ts` JSON layer with Prisma client |
-| [ ] | Delete `data/properties.json` and `src/services/storage.ts` |
-| [ ] | Express HTTP server layer wrapping MCP tools |
-| [ ] | Vitest + Supertest installed; root `vitest.config.ts` created |
-| [ ] | Integration tests for Express routes passing |
-| [ ] | Seed script with existing test data |
-
-### Phase 2 — Mobile-First React Frontend & API Wiring
-
-| Status | Task |
-|---|---|
-| [ ] | Vite + React + TypeScript scaffold in `apps/client/` |
-| [ ] | React Testing Library + `@testing-library/jest-dom` installed |
-| [ ] | Mobile-first CSS setup (Tailwind or equivalent) |
-| [ ] | Properties List view |
-| [ ] | Property Detail view |
-| [ ] | Add / Edit Property form |
-| [ ] | Rent Records view (monthly grid, mark paid) |
-| [ ] | Repair Expenses view |
-| [ ] | Utilities view |
-| [ ] | Frontend wired to Express API endpoints |
-| [ ] | Loading states and error handling |
-| [ ] | Component tests for key views passing |
-
-### Phase 3 — PWA & Local Tunnel Testing
-
-| Status | Task |
-|---|---|
-| [ ] | `vite-plugin-pwa` installed and configured |
-| [ ] | `manifest.json` authored |
-| [ ] | Service Worker registered (cache + network strategies) |
-| [ ] | Playwright installed; `playwright.config.ts` with mobile viewports |
-| [ ] | E2E happy-path tests passing |
-| [ ] | PWA manifest + Service Worker tests passing |
-| [ ] | A2HS verified on Android Chrome |
-| [ ] | A2HS verified on iOS Safari |
-| [ ] | Standalone mode confirmed (no browser chrome) |
-| [ ] | Offline fallback page |
-| [ ] | ngrok or preview deployment URL shared with friend for device testing |
-| [ ] | Mobile layout bugs resolved after device testing |
-
-### Phase 4 — Production Deployment & Multi-User Access
-
-| Status | Task |
-|---|---|
-| [ ] | GitHub repo created, local `main` pushed (`git remote add origin`) |
-| [ ] | GitHub repo connected to Render (auto-deploy on push to `main`) |
-| [ ] | Backend env vars set in Render (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `PORT`, `ALLOWED_ORIGINS`) |
-| [ ] | Render start command set to `npx prisma migrate deploy && node dist/index.js` |
-| [ ] | GitHub repo connected to Vercel (auto-deploy on push to `main`) |
-| [ ] | `VITE_API_BASE_URL` set in Vercel env vars |
-| [ ] | PWA installation verified on live HTTPS domain |
-| [ ] | Basic access control (API key or HTTP Basic Auth) |
-| [ ] | Claude Desktop `claude_desktop_config.json` pointed at hosted Render URL |
-| [ ] | Full production smoke test (add → update → view on mobile) |
-
-### Phase 5 — Continuous Maintenance
-
-| Status | Task |
-|---|---|
-| [ ] | Workflows documented and understood by both users |
-| [ ] | Both users confirmed able to trigger a redeploy (Render + Vercel/Netlify dashboards) |
-| [ ] | Claude Desktop config updated to hosted URL and tested |
-
----
-
-## 6. Key Decisions & Open Questions
+## 5. Key Decisions & Open Questions
 
 | Topic | Decision / Status |
 |---|---|
