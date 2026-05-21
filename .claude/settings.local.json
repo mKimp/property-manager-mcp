@@ -3,7 +3,12 @@
     "allow": [
       "WebFetch(domain:render.com)",
       "Bash(npm install *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git -C /Users/baobao/Documents/property-manager-mcp log --oneline -5)",
+      "Bash(git checkout *)",
+      "Bash(git -C /Users/baobao/Documents/property-manager-mcp add prisma/schema.prisma .gitignore .env.example CLAUDE.md package.json package-lock.json)",
+      "Bash(git -C /Users/baobao/Documents/property-manager-mcp status)",
+      "Bash(git -C /Users/baobao/Documents/property-manager-mcp commit -m ' *)"
     ]
   }
 }
