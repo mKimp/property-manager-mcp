@@ -124,10 +124,10 @@ property-manager-mcp/
 - [x] Run initial `npx prisma migrate dev --name init` — creates migration file and applies it directly to Turso (no local DB)
 - [x] Migrate data layer: replace `src/services/storage.ts` JSON reads/writes with Prisma client calls
 - [x] Delete `data/properties.json` and `src/services/storage.ts` once Prisma migration is complete
-- [ ] Add Express HTTP server layer (`apps/server/src/server.ts`) wrapping MCP tools as REST endpoints
-- [ ] Install Vitest + Supertest; add root `vitest.config.ts` and `test` script to root `package.json`
-- [ ] Write integration tests for Express routes using Supertest (`apps/server/src/__tests__/`)
-- [ ] All backend tests pass (`npm test`) before merging to `main`
+- [x] Add Express HTTP server layer (`apps/server/src/server.ts`) wrapping MCP tools as REST endpoints
+- [x] Install Vitest + Supertest; add root `vitest.config.ts` and `test` script to root `package.json`
+- [x] Write integration tests for Express routes using Supertest (`apps/server/src/__tests__/`)
+- [x] All backend tests pass (`npm test`) before merging to `main`
 - [ ] Write and run seed script (`prisma/seed.ts`) to re-import existing test data (Portland, Seattle, Kent, Test properties)
 
 > **Branching rule (applies to all remaining Phase 1 work and every phase after):**

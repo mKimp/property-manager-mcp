@@ -17,3 +17,19 @@
 **Fix:** Deleted `apps/server/src/services/storage.ts` and `data/properties.json`. Copied existing test property data to `prisma/seed-data.json` so it's available when the seed script is written. Confirmed TypeScript build still passes.  
 
 ---
+
+### Add Express HTTP server layer
+**Phase:** 1  
+**Date:** 2026-05-23  
+**Problem:** Express 5's TypeScript types annotate named route params as `string | string[]` (to support wildcard params like `*id`), causing TS2345 errors on every `req.params.x` usage. A plain cast like `req.params.id as string` is noisy across ~17 call sites.  
+**Fix:** Added a one-line helper `const p = (v: string | string[]) => Array.isArray(v) ? v[0] : v` and wrapped every `req.params` access with it.  
+
+---
+
+### Vitest + Supertest integration tests
+**Phase:** 1  
+**Date:** 2026-05-23  
+**Problem:** Tests need to exercise Express routes without hitting the real Turso DB, but the DB layer is a module-level import. Needed to mock `db.ts` entirely so the Prisma client is never initialized during test runs.  
+**Fix:** Used `vi.mock('../services/db.js')` to replace all four DB functions with Vitest mocks. Wrote 41 tests across all four entity types (properties, repairs, rent, utilities) covering happy paths, 404s, 400s (validation), 409s (duplicates), and dry-run delete. All 41 pass.  
+
+---
