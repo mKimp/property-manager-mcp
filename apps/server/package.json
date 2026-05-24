@@ -9,7 +9,11 @@
     "dev": "ts-node src/index.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@prisma/adapter-libsql": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "dotenv": "^16.0.0",
     "zod": "^3.22.4",
     "uuid": "^9.0.0"
   },

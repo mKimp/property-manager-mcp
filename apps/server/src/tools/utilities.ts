@@ -1,14 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
-  AddRentRecordInputShape,
-  UpdateRentRecordInputShape,
-  PropertyIdInputShape,
-  GetRentByYearInputShape,
   AddUtilitiesRecordInputShape,
   UpdateUtilitiesRecordInputShape,
+  PropertyIdInputShape,
   GetUtilitiesByYearInputShape,
 } from "../schemas/index.js";
-import { getPropertyById, saveProperty } from "../services/storage.js";
+import { getPropertyById, saveProperty } from "../services/db.js";
 import { Utilities, UtilitiesRecord } from "../types.js";
 
 const MONTH_NAMES = [
@@ -42,7 +39,7 @@ Returns: The newly added utilities record.`,
       const now = new Date();
       const year = yearInput ?? now.getFullYear();
       const month = monthInput ?? (now.getMonth() + 1);
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -57,7 +54,7 @@ Returns: The newly added utilities record.`,
       property.utilitiesRecords.push(record);
       property.utilitiesRecords.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
       property.updatedAt = new Date().toISOString();
-      saveProperty(property);
+      await saveProperty(property);
       return {
         content: [{ type: "text" as const, text: `Utilities record for ${MONTH_NAMES[month]} ${year} added to '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
       };
@@ -88,7 +85,7 @@ Returns: The updated utilities record.`,
       const now = new Date();
       const year = yearInput ?? now.getFullYear();
       const month = monthInput ?? (now.getMonth() + 1);
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -103,7 +100,7 @@ Returns: The updated utilities record.`,
       if (utilities !== undefined) record.utilities = utilities;
       if (notes !== undefined) record.notes = notes;
       property.updatedAt = new Date().toISOString();
-      saveProperty(property);
+      await saveProperty(property);
       return {
         content: [{ type: "text" as const, text: `Utilities record for ${MONTH_NAMES[month]} ${year} updated on '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
       };
@@ -121,7 +118,7 @@ Returns: The updated utilities record.`,
     },
     async ({ propertyId, year: yearInput }) => {
       const year = yearInput ?? new Date().getFullYear();
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -172,7 +169,7 @@ Returns: The updated utilities record.`,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ propertyId }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }

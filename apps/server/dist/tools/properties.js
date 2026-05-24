@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerPropertyTools = registerPropertyTools;
 const uuid_1 = require("uuid");
 const index_js_1 = require("../schemas/index.js");
-const storage_js_1 = require("../services/storage.js");
+const db_js_1 = require("../services/db.js");
 function registerPropertyTools(server) {
     // LIST ALL PROPERTIES
     server.registerTool("property_list_all", {
@@ -14,7 +14,7 @@ Returns: Array of property summaries with id, propertyName, address, rent, curre
         inputSchema: {},
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async () => {
-        const properties = (0, storage_js_1.getAllProperties)();
+        const properties = await (0, db_js_1.getAllProperties)();
         if (properties.length === 0) {
             return { content: [{ type: "text", text: "No properties found." }] };
         }
@@ -50,7 +50,7 @@ Returns: Full property object with repairs[] and rentRecords[].`,
         inputSchema: index_js_1.PropertyIdInputShape,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -100,7 +100,7 @@ Returns: The newly created property with its generated ID.`,
             propertyTax: propertyTax ? propertyTax : 0,
             utilitiesRecords: [],
         };
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Property '${property.propertyName}' added with ID: ${property.id}\n\n${JSON.stringify(property, null, 2)}` }],
         };
@@ -121,7 +121,7 @@ Returns: The updated property object.`,
         inputSchema: index_js_1.UpdatePropertyInputShape,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId, propertyName, address, rent, currency, tenants, leaseStart, leaseEnd, propertyManager, notes, mortgage, propertyTax }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -148,7 +148,7 @@ Returns: The updated property object.`,
         if (propertyTax !== undefined)
             property.propertyTax = propertyTax;
         property.updatedAt = new Date().toISOString();
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Property '${property.propertyName}' updated.\n\n${JSON.stringify(property, null, 2)}` }],
         };
@@ -170,7 +170,7 @@ If multiple matches are found, present them to the user and ask which one they m
         inputSchema: index_js_1.SearchPropertiesInputShape,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ city, state, propertyName, tenantName, street }) => {
-        const properties = (0, storage_js_1.getAllProperties)();
+        const properties = await (0, db_js_1.getAllProperties)();
         const matches = properties.filter((p) => {
             if (city && !p.address.city.toLowerCase().includes(city.toLowerCase()))
                 return false;
@@ -222,7 +222,7 @@ Returns: Summary of what was/would be deleted including repair count and rent re
         inputSchema: index_js_1.DeletePropertyInputShape,
         annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
     }, async ({ propertyId, dryRun }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -244,7 +244,7 @@ Returns: Summary of what was/would be deleted including repair count and rent re
                     }],
             };
         }
-        (0, storage_js_1.deleteProperty)(propertyId);
+        await (0, db_js_1.deleteProperty)(propertyId);
         return {
             content: [{
                     type: "text",

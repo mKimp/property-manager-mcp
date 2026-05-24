@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerRentTools = registerRentTools;
 const index_js_1 = require("../schemas/index.js");
-const storage_js_1 = require("../services/storage.js");
+const db_js_1 = require("../services/db.js");
 const MONTH_NAMES = [
     "", "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -26,7 +26,7 @@ Returns: The newly added rent record.`,
         inputSchema: index_js_1.AddRentRecordInputShape,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     }, async ({ propertyId, year, month, amount, paid, paidDate, notes }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -40,7 +40,7 @@ Returns: The newly added rent record.`,
         property.rentRecords.push(record);
         property.rentRecords.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
         property.updatedAt = new Date().toISOString();
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Rent record for ${MONTH_NAMES[month]} ${year} added to '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
         };
@@ -63,7 +63,7 @@ Returns: The updated rent record.`,
         inputSchema: index_js_1.UpdateRentRecordInputShape,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId, year, month, paid, paidDate, amount, notes }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -82,7 +82,7 @@ Returns: The updated rent record.`,
         if (notes !== undefined)
             record.notes = notes;
         property.updatedAt = new Date().toISOString();
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Rent record for ${MONTH_NAMES[month]} ${year} updated on '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
         };
@@ -100,7 +100,7 @@ Returns: Monthly rent records with totalCollected, totalDue, unpaidMonths, and c
         inputSchema: index_js_1.GetRentByYearInputShape,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId, year }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -136,7 +136,7 @@ Returns: All rent records grouped by year with annual collected/due totals.`,
         inputSchema: index_js_1.PropertyIdInputShape,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }

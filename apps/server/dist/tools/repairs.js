@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerRepairTools = registerRepairTools;
 const uuid_1 = require("uuid");
 const index_js_1 = require("../schemas/index.js");
-const storage_js_1 = require("../services/storage.js");
+const db_js_1 = require("../services/db.js");
 function registerRepairTools(server) {
     // ADD REPAIR EXPENSE
     server.registerTool("repair_add", {
@@ -22,7 +22,7 @@ Returns: The newly added repair expense.`,
         inputSchema: index_js_1.AddRepairInputShape,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     }, async ({ propertyId, description, amount, date, vendor, notes }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -38,7 +38,7 @@ Returns: The newly added repair expense.`,
         };
         property.repairs.push(newRepair);
         property.updatedAt = new Date().toISOString();
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Repair expense added to '${property.propertyName}'.\n\n${JSON.stringify(newRepair, null, 2)}` }],
         };
@@ -56,7 +56,7 @@ Returns: Confirmation message.`,
         inputSchema: index_js_1.DeleteRepairInputShape,
         annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
     }, async ({ propertyId, repairId }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -66,7 +66,7 @@ Returns: Confirmation message.`,
         }
         const removed = property.repairs.splice(index, 1)[0];
         property.updatedAt = new Date().toISOString();
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Repair expense '${removed.description}' ($${removed.amount}) removed from '${property.propertyName}'.` }],
         };
@@ -83,7 +83,7 @@ Returns: Array of repair expenses with total cost summary.`,
         inputSchema: index_js_1.PropertyIdInputShape,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -107,7 +107,7 @@ Returns: Repair expenses for that year with total cost.`,
         inputSchema: index_js_1.GetRepairsByYearInputShape,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId, year }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }

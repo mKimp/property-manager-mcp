@@ -12,7 +12,7 @@ import {
   getPropertyById,
   saveProperty,
   deleteProperty,
-} from "../services/storage.js";
+} from "../services/db.js";
 import { Property } from "../types.js";
 
 export function registerPropertyTools(server: McpServer): void {
@@ -29,7 +29,7 @@ Returns: Array of property summaries with id, propertyName, address, rent, curre
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async () => {
-      const properties = getAllProperties();
+      const properties = await getAllProperties();
       if (properties.length === 0) {
         return { content: [{ type: "text" as const, text: "No properties found." }] };
       }
@@ -70,7 +70,7 @@ Returns: Full property object with repairs[] and rentRecords[].`,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ propertyId }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -125,7 +125,7 @@ Returns: The newly created property with its generated ID.`,
         propertyTax: propertyTax ? propertyTax : 0,
         utilitiesRecords: [],
       };
-      saveProperty(property);
+      await saveProperty(property);
       return {
         content: [{ type: "text" as const, text: `Property '${property.propertyName}' added with ID: ${property.id}\n\n${JSON.stringify(property, null, 2)}` }],
       };
@@ -151,7 +151,7 @@ Returns: The updated property object.`,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ propertyId, propertyName, address, rent, currency, tenants, leaseStart, leaseEnd, propertyManager, notes, mortgage, propertyTax  }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -168,7 +168,7 @@ Returns: The updated property object.`,
       if(propertyTax !== undefined) property.propertyTax = propertyTax;
 
       property.updatedAt = new Date().toISOString();
-      saveProperty(property);
+      await saveProperty(property);
       return {
         content: [{ type: "text" as const, text: `Property '${property.propertyName}' updated.\n\n${JSON.stringify(property, null, 2)}` }],
       };
@@ -195,7 +195,7 @@ If multiple matches are found, present them to the user and ask which one they m
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ city, state, propertyName, tenantName, street }) => {
-      const properties = getAllProperties();
+      const properties = await getAllProperties();
       const matches = properties.filter((p) => {
         if (city && !p.address.city.toLowerCase().includes(city.toLowerCase())) return false;
         if (state && !p.address.state.toLowerCase().includes(state.toLowerCase())) return false;
@@ -251,7 +251,7 @@ Returns: Summary of what was/would be deleted including repair count and rent re
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
     },
     async ({ propertyId, dryRun }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -276,7 +276,7 @@ Returns: Summary of what was/would be deleted including repair count and rent re
         };
       }
 
-      deleteProperty(propertyId);
+      await deleteProperty(propertyId);
       return {
         content: [{
           type: "text" as const,

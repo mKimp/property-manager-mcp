@@ -5,7 +5,7 @@ import {
   PropertyIdInputShape,
   GetRentByYearInputShape,
 } from "../schemas/index.js";
-import { getPropertyById, saveProperty } from "../services/storage.js";
+import { getPropertyById, saveProperty } from "../services/db.js";
 import { RentRecord } from "../types.js";
 
 const MONTH_NAMES = [
@@ -36,7 +36,7 @@ Returns: The newly added rent record.`,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
     async ({ propertyId, year, month, amount, paid, paidDate, notes }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -50,7 +50,7 @@ Returns: The newly added rent record.`,
       property.rentRecords.push(record);
       property.rentRecords.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
       property.updatedAt = new Date().toISOString();
-      saveProperty(property);
+      await saveProperty(property);
       return {
         content: [{ type: "text" as const, text: `Rent record for ${MONTH_NAMES[month]} ${year} added to '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
       };
@@ -78,7 +78,7 @@ Returns: The updated rent record.`,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ propertyId, year, month, paid, paidDate, amount, notes }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -93,7 +93,7 @@ Returns: The updated rent record.`,
       if (amount !== undefined) record.amount = amount;
       if (notes !== undefined) record.notes = notes;
       property.updatedAt = new Date().toISOString();
-      saveProperty(property);
+      await saveProperty(property);
       return {
         content: [{ type: "text" as const, text: `Rent record for ${MONTH_NAMES[month]} ${year} updated on '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
       };
@@ -116,7 +116,7 @@ Returns: Monthly rent records with totalCollected, totalDue, unpaidMonths, and c
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ propertyId, year }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }
@@ -157,7 +157,7 @@ Returns: All rent records grouped by year with annual collected/due totals.`,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ propertyId }) => {
-      const property = getPropertyById(propertyId);
+      const property = await getPropertyById(propertyId);
       if (!property) {
         return { content: [{ type: "text" as const, text: `Error: Property '${propertyId}' not found.` }] };
       }

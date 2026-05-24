@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerUtilitiesTools = registerUtilitiesTools;
 const index_js_1 = require("../schemas/index.js");
-const storage_js_1 = require("../services/storage.js");
+const db_js_1 = require("../services/db.js");
 const MONTH_NAMES = [
     "", "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -29,7 +29,7 @@ Returns: The newly added utilities record.`,
         const now = new Date();
         const year = yearInput ?? now.getFullYear();
         const month = monthInput ?? (now.getMonth() + 1);
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -44,7 +44,7 @@ Returns: The newly added utilities record.`,
         property.utilitiesRecords.push(record);
         property.utilitiesRecords.sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
         property.updatedAt = new Date().toISOString();
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Utilities record for ${MONTH_NAMES[month]} ${year} added to '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
         };
@@ -70,7 +70,7 @@ Returns: The updated utilities record.`,
         const now = new Date();
         const year = yearInput ?? now.getFullYear();
         const month = monthInput ?? (now.getMonth() + 1);
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -89,7 +89,7 @@ Returns: The updated utilities record.`,
         if (notes !== undefined)
             record.notes = notes;
         property.updatedAt = new Date().toISOString();
-        (0, storage_js_1.saveProperty)(property);
+        await (0, db_js_1.saveProperty)(property);
         return {
             content: [{ type: "text", text: `Utilities record for ${MONTH_NAMES[month]} ${year} updated on '${property.propertyName}'.\n\n${JSON.stringify(record, null, 2)}` }],
         };
@@ -102,7 +102,7 @@ Returns: The updated utilities record.`,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId, year: yearInput }) => {
         const year = yearInput ?? new Date().getFullYear();
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }
@@ -142,7 +142,7 @@ Returns: The updated utilities record.`,
         inputSchema: index_js_1.PropertyIdInputShape,
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     }, async ({ propertyId }) => {
-        const property = (0, storage_js_1.getPropertyById)(propertyId);
+        const property = await (0, db_js_1.getPropertyById)(propertyId);
         if (!property) {
             return { content: [{ type: "text", text: `Error: Property '${propertyId}' not found.` }] };
         }

@@ -122,8 +122,8 @@ property-manager-mcp/
 - [x] Provision Turso database (free tier) — get `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
 - [x] Initialize Prisma with `@prisma/adapter-libsql` — write `prisma/schema.prisma` (Property, Tenant, RepairExpense, RentRecord, UtilitiesRecord)
 - [x] Run initial `npx prisma migrate dev --name init` — creates migration file and applies it directly to Turso (no local DB)
-- [ ] Migrate data layer: replace `src/services/storage.ts` JSON reads/writes with Prisma client calls
-- [ ] Delete `data/properties.json` and `src/services/storage.ts` once Prisma migration is complete
+- [x] Migrate data layer: replace `src/services/storage.ts` JSON reads/writes with Prisma client calls
+- [x] Delete `data/properties.json` and `src/services/storage.ts` once Prisma migration is complete
 - [ ] Add Express HTTP server layer (`apps/server/src/server.ts`) wrapping MCP tools as REST endpoints
 - [ ] Install Vitest + Supertest; add root `vitest.config.ts` and `test` script to root `package.json`
 - [ ] Write integration tests for Express routes using Supertest (`apps/server/src/__tests__/`)
