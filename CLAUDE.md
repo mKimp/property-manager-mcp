@@ -202,6 +202,7 @@ property-manager-mcp/
   - `<ChatInput>` — textarea + send button; Enter sends, Shift+Enter newline; disabled while streaming
 - [ ] Wire `<ChatInput>` to `POST /api/chat` using the **Fetch SSE pattern** (`fetch` + `ReadableStream`) — append streamed chunks to the assistant message in real time
 - [ ] Conversation state: keep full `messages` array in React state; append each user/assistant turn; send entire history on every request
+- [ ] **Auto-clear context (cost pillar 1):** on app load, read `lastActivityAt` from `localStorage`; if > 2 hours ago, reset `messages` to `[]` (fresh session). Update `lastActivityAt` on every send. Claude re-orients itself via tool calls — no DB memory needed.
 - [ ] Error handling: if the stream errors or the server returns non-200, show an inline retry prompt in the chat thread
 - [ ] Write component tests: `<ChatThread>` renders messages correctly, `<ChatInput>` fires submit, `<MessageBubble>` renders markdown
 - [ ] Install and configure `vite-plugin-pwa`: `manifest.json` (name, short_name, icons, `display: "standalone"`, `start_url: "/"`, theme color), Service Worker (cache-first for static assets, network-first for `/api/`)
@@ -217,7 +218,9 @@ property-manager-mcp/
 - [ ] Build tool registry (`apps/server/src/chat/tools.ts`) — convert existing Zod MCP schemas into Anthropic `Tool` input_schema objects (all 18 MCP tools: property_list_all, property_get, property_add, property_update, property_search, property_delete, repair_add, repair_delete, repair_list, repair_list_by_year, rent_add_record, rent_update_record, rent_list_by_year, rent_list_all, utilities_add_record, utilities_update_record, utilities_list_by_year, utilities_list_all)
 - [ ] Build tool executor (`apps/server/src/chat/executor.ts`) — receives a `tool_use` block from Claude, routes to the correct tool function, returns a `tool_result` block
 - [ ] Replace mock handler in `POST /api/chat` with the real implementation:
-  - Calls Claude API (`claude-sonnet-4-6`) with `stream: true`, system prompt, tool registry, and message history
+  - **Model (cost pillar 3):** use `claude-haiku-4-5` (`claude-haiku-4-5-20251001`) — fast, cheap (~$1/$5 per M tokens), fully capable of parsing property management commands and calling tools
+  - **Prompt caching (cost pillar 2):** add `cache_control: { type: "ephemeral" }` to the system prompt block and to the tool definitions array — static content, so they cache on the first call and are re-read at a 90% discount (~$0.30/M instead of $3/M) for the rest of the session
+  - Calls Claude API with `stream: true`, system prompt, tool registry, and message history
   - Agentic loop: while Claude emits `tool_use` blocks → execute tool → append `tool_result` → continue streaming
   - Streams Claude's final text via same SSE format (`data: <chunk>\n\n` … `data: [DONE]\n\n`) — **no frontend changes needed**
 - [ ] Update Vitest tests for the real chat route (mock `@anthropic-ai/sdk`): happy path, single tool call round-trip, unknown tool error, malformed body 400
@@ -340,7 +343,9 @@ Then restart Claude Desktop.
 | **Local vs. hosted DB** | **Hosted-only.** Turso cloud DB used from day one — no local SQLite, no JSON file fallback. |
 | **Frontend UI paradigm** | **Chat-only** (no forms, no nav views). Users type natural language; Claude interprets and calls MCP tools. |
 | **Build order** | **Mock-first.** Phase 2a/2b build the full UI against a hardcoded SSE mock. Phase 2c swaps in the real Claude API with zero frontend changes. |
-| **Claude model for chat** | **claude-sonnet-4-6** — fast, supports tool_use + streaming, cost-effective for two users. |
+| **Claude model for chat** | **`claude-haiku-4-5`** (`claude-haiku-4-5-20251001`) — fast, ~$1/$5 per M tokens, fully capable for property management commands. Cost pillar 3. |
+| **Prompt caching** | System prompt + tool definitions get `cache_control: { type: "ephemeral" }` — static on every call, so cached after the first request at ~90% discount. Cost pillar 2. |
+| **Context auto-clear** | Frontend resets `messages: []` after 2 hours of inactivity (checked via `localStorage`). Claude re-orients with tool calls, not history. Cost pillar 1. |
 | **Chat streaming** | **SSE (Server-Sent Events)** from `POST /api/chat`. Each text delta is `data: <chunk>\n\n`; stream ends with `data: [DONE]\n\n`. Mock and real endpoints share the same wire format. |
 | **Tool execution location** | **Backend only.** Claude API returns `tool_use` blocks; the Express server executes them against Prisma/Turso, never the frontend. |
 | **Anthropic API key** | Backend env var only (`ANTHROPIC_API_KEY`). Not needed until Phase 2c. Never exposed to the client. |
