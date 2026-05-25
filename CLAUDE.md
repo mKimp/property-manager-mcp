@@ -184,7 +184,7 @@ property-manager-mcp/
 - [ ] Add `POST /api/chat` route to `apps/server/src/server.ts` in **mock mode**:
   - Accepts `{ messages: Array<{role, content}> }` (full conversation history)
   - Returns `Content-Type: text/event-stream`; simulates streaming by writing chunks with `setInterval` or sequential `res.write` calls
-  - Each chunk: `data: <text fragment>\n\n`; stream ends with `data: [DONE]\n\n`
+  - Each chunk: `data: {"t":"<text fragment>"}\n\n`; stream ends with `data: [DONE]\n\n` (JSON-wrapped so newlines and special characters survive SSE without escaping)
   - Hardcoded responses that exercise the full UI: a plain text reply, a multi-line markdown reply (table, bullet list), and a slow-drip long reply
   - Optional: simple keyword matching on the last user message to return a vaguely relevant mock (e.g. "kent" → mentions Kent House rent)
 - [ ] Write Vitest tests for the mock chat route: SSE headers set correctly, `[DONE]` terminator present, malformed body returns 400
@@ -222,7 +222,7 @@ property-manager-mcp/
   - **Prompt caching (cost pillar 2):** add `cache_control: { type: "ephemeral" }` to the system prompt block and to the tool definitions array — static content, so they cache on the first call and are re-read at a 90% discount (~$0.30/M instead of $3/M) for the rest of the session
   - Calls Claude API with `stream: true`, system prompt, tool registry, and message history
   - Agentic loop: while Claude emits `tool_use` blocks → execute tool → append `tool_result` → continue streaming
-  - Streams Claude's final text via same SSE format (`data: <chunk>\n\n` … `data: [DONE]\n\n`) — **no frontend changes needed**
+  - Streams Claude's final text via same SSE format (`data: {"t":"<chunk>"}\n\n` … `data: [DONE]\n\n`) — **no frontend changes needed**
 - [ ] Update Vitest tests for the real chat route (mock `@anthropic-ai/sdk`): happy path, single tool call round-trip, unknown tool error, malformed body 400
 - [ ] All tests pass (`npm test`) before merging to `main`
 
@@ -346,7 +346,7 @@ Then restart Claude Desktop.
 | **Claude model for chat** | **`claude-haiku-4-5`** (`claude-haiku-4-5-20251001`) — fast, ~$1/$5 per M tokens, fully capable for property management commands. Cost pillar 3. |
 | **Prompt caching** | System prompt + tool definitions get `cache_control: { type: "ephemeral" }` — static on every call, so cached after the first request at ~90% discount. Cost pillar 2. |
 | **Context auto-clear** | Frontend resets `messages: []` after 2 hours of inactivity (checked via `localStorage`). Claude re-orients with tool calls, not history. Cost pillar 1. |
-| **Chat streaming** | **SSE (Server-Sent Events)** from `POST /api/chat`. Each text delta is `data: <chunk>\n\n`; stream ends with `data: [DONE]\n\n`. Mock and real endpoints share the same wire format. |
+| **Chat streaming** | **SSE (Server-Sent Events)** from `POST /api/chat`. Each text delta is `data: {"t":"<chunk>"}\n\n`; stream ends with `data: [DONE]\n\n`. JSON-wrapped so newlines in markdown survive SSE. Mock and real share the same wire format. |
 | **Tool execution location** | **Backend only.** Claude API returns `tool_use` blocks; the Express server executes them against Prisma/Turso, never the frontend. |
 | **Anthropic API key** | Backend env var only (`ANTHROPIC_API_KEY`). Not needed until Phase 2c. Never exposed to the client. |
 | **Auth strategy** | Shared API key in env var (simplest) vs. per-user credentials. Only two users — simplicity preferred. |
