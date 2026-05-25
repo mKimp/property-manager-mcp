@@ -9,7 +9,8 @@
     "build": "npm run build --workspace=apps/server",
     "start": "npm run start --workspace=apps/server",
     "dev": "npm run dev --workspace=apps/server",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -17,6 +18,7 @@
     "@types/supertest": "^7.2.0",
     "prisma": "^7.8.0",
     "supertest": "^7.2.2",
+    "tsx": "^4.22.3",
     "vitest": "^4.1.7"
   },
   "dependencies": {
