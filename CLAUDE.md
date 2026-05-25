@@ -128,7 +128,7 @@ property-manager-mcp/
 - [x] Install Vitest + Supertest; add root `vitest.config.ts` and `test` script to root `package.json`
 - [x] Write integration tests for Express routes using Supertest (`apps/server/src/__tests__/`)
 - [x] All backend tests pass (`npm test`) before merging to `main`
-- [ ] Write and run seed script (`prisma/seed.ts`) to re-import existing test data (Portland, Seattle, Kent, Test properties)
+- [x] Write and run seed script (`prisma/seed.ts`) to re-import existing test data (Portland, Seattle, Kent, Test properties)
 
 > **Branching rule (applies to all remaining Phase 1 work and every phase after):**
 > Every task gets its own branch. Merge to `main` only when it works.

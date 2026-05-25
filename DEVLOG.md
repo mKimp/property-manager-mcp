@@ -33,3 +33,11 @@
 **Fix:** Used `vi.mock('../services/db.js')` to replace all four DB functions with Vitest mocks. Wrote 41 tests across all four entity types (properties, repairs, rent, utilities) covering happy paths, 404s, 400s (validation), 409s (duplicates), and dry-run delete. All 41 pass.  
 
 ---
+
+### Seed script for test property data
+**Phase:** 1  
+**Date:** 2026-05-24  
+**Problem:** The PrismaLibSql adapter in Prisma 7 requires `{ url, authToken }` passed directly to `new PrismaLibSql(...)` (matching the pattern in `db.ts`), not a pre-created `@libsql/client` instance. Also, initializing the client at module level (before `dotenv/config` finishes) caused a silent URL-undefined error on first DB use. The `finally(() => prisma.$disconnect())` referenced `prisma` outside the function scope after the variable was moved inside `seed()`.  
+**Fix:** Moved all Prisma client initialization inside `seed()` so dotenv has fully populated env vars first. Matched the `new PrismaLibSql({ url, authToken })` pattern from `db.ts`. Moved `$disconnect()` to `await prisma.$disconnect()` inside the function. All 4 properties (Portland, Seattle, Kent, Test) seeded successfully.  
+
+---
