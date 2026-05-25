@@ -173,26 +173,24 @@ property-manager-mcp/
 
 ---
 
-### Phase 2 — Chat UI + Claude API Integration
+### Phase 2 — Chat UI (Mock Backend → Real Claude API)
 
-**Goal:** A chat PWA where users type natural language commands. The backend sends those to Claude, which calls the right MCP tool and streams a plain-English response back.
+**Goal:** A chat PWA where users type natural language commands. Build and polish 100% of the UI against a mocked backend first — zero API tokens spent. Swap in the real Claude API only once the UI is complete.
 
-#### 2a — Backend: Claude API chat endpoint
+> **Mock-first rule:** `ANTHROPIC_API_KEY` is not needed for Phase 2a or 2b. The mock endpoint speaks the exact same SSE wire format as the real one, so the frontend never needs to change when the real API is wired in during 2c.
 
-- [ ] Install `@anthropic-ai/sdk` in `apps/server/`; add `ANTHROPIC_API_KEY` to `.env`, `.env.example`, and Render env vars
-- [ ] Write a system prompt (`apps/server/src/chat/systemPrompt.ts`) that describes the assistant role and the property portfolio context
-- [ ] Build a tool registry (`apps/server/src/chat/tools.ts`) that converts existing Zod MCP schemas into Anthropic `Tool` input_schema objects — one entry per MCP tool (property_list_all, property_get, property_add, property_update, property_search, property_delete, repair_add, repair_delete, repair_list, repair_list_by_year, rent_add_record, rent_update_record, rent_list_by_year, rent_list_all, utilities_add_record, utilities_update_record, utilities_list_by_year, utilities_list_all)
-- [ ] Build a tool executor (`apps/server/src/chat/executor.ts`) that receives a `tool_use` block from Claude, routes it to the correct existing tool function in `apps/server/src/tools/`, and returns the result as a `tool_result` block
-- [ ] Add `POST /api/chat` route to `apps/server/src/server.ts`:
-  - Accepts `{ messages: Array<{role, content}> }` (full conversation history from client)
-  - Calls Claude API with `stream: true`, the system prompt, tool registry, and message history
-  - Agentic loop: while Claude emits `tool_use` blocks, execute the tool, append `tool_result`, continue streaming
-  - Streams Claude's final text response to the client via **Server-Sent Events (SSE)**
-  - Returns `Content-Type: text/event-stream`; each chunk is `data: <text>\n\n`; closes with `data: [DONE]\n\n`
-- [ ] Write Vitest tests for the chat route (mock `@anthropic-ai/sdk`): happy path text response, single tool call round-trip, unknown tool name error, malformed body 400
+#### 2a — Backend: mock `/api/chat` endpoint
+
+- [ ] Add `POST /api/chat` route to `apps/server/src/server.ts` in **mock mode**:
+  - Accepts `{ messages: Array<{role, content}> }` (full conversation history)
+  - Returns `Content-Type: text/event-stream`; simulates streaming by writing chunks with `setInterval` or sequential `res.write` calls
+  - Each chunk: `data: <text fragment>\n\n`; stream ends with `data: [DONE]\n\n`
+  - Hardcoded responses that exercise the full UI: a plain text reply, a multi-line markdown reply (table, bullet list), and a slow-drip long reply
+  - Optional: simple keyword matching on the last user message to return a vaguely relevant mock (e.g. "kent" → mentions Kent House rent)
+- [ ] Write Vitest tests for the mock chat route: SSE headers set correctly, `[DONE]` terminator present, malformed body returns 400
 - [ ] All backend tests pass (`npm test`) before moving to frontend
 
-#### 2b — Frontend: Chat PWA
+#### 2b — Frontend: Chat PWA (against mock)
 
 - [ ] Scaffold frontend: `npm create vite@latest apps/client -- --template react-ts`
 - [ ] Install React Testing Library + `@testing-library/jest-dom`; extend root `vitest.config.ts` to cover `apps/client/src`
@@ -203,24 +201,36 @@ property-manager-mcp/
   - `<TypingIndicator>` — three animated dots shown while awaiting the first SSE chunk
   - `<ChatInput>` — textarea + send button; Enter sends, Shift+Enter newline; disabled while streaming
 - [ ] Wire `<ChatInput>` to `POST /api/chat` using the **Fetch SSE pattern** (`fetch` + `ReadableStream`) — append streamed chunks to the assistant message in real time
-- [ ] Conversation state: keep full `messages` array in React state; append each user/assistant turn; send entire history on every request so Claude has context
+- [ ] Conversation state: keep full `messages` array in React state; append each user/assistant turn; send entire history on every request
 - [ ] Error handling: if the stream errors or the server returns non-200, show an inline retry prompt in the chat thread
 - [ ] Write component tests: `<ChatThread>` renders messages correctly, `<ChatInput>` fires submit, `<MessageBubble>` renders markdown
 - [ ] Install and configure `vite-plugin-pwa`: `manifest.json` (name, short_name, icons, `display: "standalone"`, `start_url: "/"`, theme color), Service Worker (cache-first for static assets, network-first for `/api/`)
 - [ ] All frontend tests pass (`npm test`) before merging to `main`
 - [ ] Environment variable: `VITE_API_BASE_URL` in `.env` (local) and Vercel env vars (prod) pointing at the Render backend
 
+#### 2c — Wire in real Claude API (swap mock → live)
+
+*Do this only after the UI is complete and passing tests.*
+
+- [ ] Install `@anthropic-ai/sdk` in `apps/server/`; add `ANTHROPIC_API_KEY` to `.env`, `.env.example`, and Render env vars
+- [ ] Write system prompt (`apps/server/src/chat/systemPrompt.ts`) — assistant role and property portfolio context
+- [ ] Build tool registry (`apps/server/src/chat/tools.ts`) — convert existing Zod MCP schemas into Anthropic `Tool` input_schema objects (all 18 MCP tools: property_list_all, property_get, property_add, property_update, property_search, property_delete, repair_add, repair_delete, repair_list, repair_list_by_year, rent_add_record, rent_update_record, rent_list_by_year, rent_list_all, utilities_add_record, utilities_update_record, utilities_list_by_year, utilities_list_all)
+- [ ] Build tool executor (`apps/server/src/chat/executor.ts`) — receives a `tool_use` block from Claude, routes to the correct tool function, returns a `tool_result` block
+- [ ] Replace mock handler in `POST /api/chat` with the real implementation:
+  - Calls Claude API (`claude-sonnet-4-6`) with `stream: true`, system prompt, tool registry, and message history
+  - Agentic loop: while Claude emits `tool_use` blocks → execute tool → append `tool_result` → continue streaming
+  - Streams Claude's final text via same SSE format (`data: <chunk>\n\n` … `data: [DONE]\n\n`) — **no frontend changes needed**
+- [ ] Update Vitest tests for the real chat route (mock `@anthropic-ai/sdk`): happy path, single tool call round-trip, unknown tool error, malformed body 400
+- [ ] All tests pass (`npm test`) before merging to `main`
+
 ---
 
 ### Phase 3 — PWA & Local Tunnel Testing
 
-**Goal:** The app installs to the home screen and my friend can test it on her mobile device over the internet.
+**Goal:** The app installs to the home screen and both users can test it on their mobile devices over the internet.
 
-- [ ] Install and configure `vite-plugin-pwa`
-- [ ] Write `manifest.json` (name, short_name, icons, `display: "standalone"`, `start_url`, theme color)
-- [ ] Register Service Worker (cache-first strategy for static assets, network-first for API calls)
 - [ ] Install Playwright; configure `playwright.config.ts` at repo root with mobile viewport presets (iPhone, Pixel)
-- [ ] Write E2E tests: full happy-path flow (add property → add rent record → mark paid)
+- [ ] Write E2E tests against the mock backend: full chat happy-path (send message → stream renders → history preserved)
 - [ ] Write PWA tests: verify `manifest.json` is served, Service Worker registers, offline fallback page loads
 - [ ] Verify "Add to Home Screen" prompt appears on Android Chrome and iOS Safari
 - [ ] Verify app opens in standalone mode (no browser URL bar) after installation
@@ -329,10 +339,11 @@ Then restart Claude Desktop.
 | **Monorepo vs. two repos** | **Monorepo** with npm workspaces. `apps/server/` + `apps/client/` under one repo. |
 | **Local vs. hosted DB** | **Hosted-only.** Turso cloud DB used from day one — no local SQLite, no JSON file fallback. |
 | **Frontend UI paradigm** | **Chat-only** (no forms, no nav views). Users type natural language; Claude interprets and calls MCP tools. |
+| **Build order** | **Mock-first.** Phase 2a/2b build the full UI against a hardcoded SSE mock. Phase 2c swaps in the real Claude API with zero frontend changes. |
 | **Claude model for chat** | **claude-sonnet-4-6** — fast, supports tool_use + streaming, cost-effective for two users. |
-| **Chat streaming** | **SSE (Server-Sent Events)** from `POST /api/chat`. Each text delta is `data: <chunk>\n\n`; stream ends with `data: [DONE]\n\n`. |
+| **Chat streaming** | **SSE (Server-Sent Events)** from `POST /api/chat`. Each text delta is `data: <chunk>\n\n`; stream ends with `data: [DONE]\n\n`. Mock and real endpoints share the same wire format. |
 | **Tool execution location** | **Backend only.** Claude API returns `tool_use` blocks; the Express server executes them against Prisma/Turso, never the frontend. |
-| **Anthropic API key** | Backend env var only (`ANTHROPIC_API_KEY`). Never exposed to the client. |
+| **Anthropic API key** | Backend env var only (`ANTHROPIC_API_KEY`). Not needed until Phase 2c. Never exposed to the client. |
 | **Auth strategy** | Shared API key in env var (simplest) vs. per-user credentials. Only two users — simplicity preferred. |
 | **Utilities tools** | **Done.** All four utilities tools active and consistent (year/month default to current when omitted). |
 | **Claude Desktop** | **Hosted URL.** `claude_desktop_config.json` will point at the Render/Railway URL — no local server needed. |
