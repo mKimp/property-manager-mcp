@@ -41,3 +41,38 @@
 **Fix:** Moved all Prisma client initialization inside `seed()` so dotenv has fully populated env vars first. Matched the `new PrismaLibSql({ url, authToken })` pattern from `db.ts`. Moved `$disconnect()` to `await prisma.$disconnect()` inside the function. All 4 properties (Portland, Seattle, Kent, Test) seeded successfully.  
 
 ---
+
+### Architecture decision: redesign Phase 2 UI as a chat interface
+**Phase:** 2 (planning)  
+**Date:** 2026-05-24  
+**Problem:** The original Phase 2 plan was a traditional mobile app — card views, forms, nav menus. This means building and maintaining a lot of UI for a two-person internal tool. Every new field or tool would require a new form input. It also ignores the core strength of having an MCP backend: the tools are already well-defined, typed, and validated.  
+**Fix:** Redesigned the frontend as a **chat-only interface** (no forms, no nav views). Users type natural language ("add utilities for Kent House this month"). The backend receives the message, sends it to Claude API with all 18 MCP tools as tool definitions, Claude interprets the intent and calls the right tool, the backend executes it against Turso, and Claude streams a plain-English confirmation back. The MCP tool schemas are reused as-is — no duplication. The frontend becomes a simple chat shell with no domain knowledge.  
+
+---
+
+### Architecture decision: mock-first build order for Phase 2
+**Phase:** 2 (planning)  
+**Date:** 2026-05-24  
+**Problem:** Building the chat frontend directly against the real Claude API means spending tokens on every UI iteration — every "does the bubble render?" test, every layout tweak, every reload. It also creates a hard dependency on having `ANTHROPIC_API_KEY` configured before any frontend work can start.  
+**Fix:** Split Phase 2 into three tracks: **2a** builds a mock `POST /api/chat` endpoint that returns hardcoded SSE-streamed text (same wire format as the real thing — `data: <chunk>\n\n` … `data: [DONE]\n\n`). **2b** builds 100% of the React PWA against the mock. **2c** swaps in the real Claude API — the frontend never changes because the wire format is identical. Zero tokens spent during UI development.  
+
+---
+
+### Architecture decision: 3 cost pillars to keep Claude API bill under $2/month
+**Phase:** 2 (planning)  
+**Date:** 2026-05-24  
+**Problem:** The Claude API charges per token. Without any guardrails, costs can creep up even for a two-person app — especially because every API call sends the system prompt and all 18 tool definitions, and a chat UI naturally accumulates conversation history that grows with each turn.  
+**Fix:** Three architectural choices baked into Phase 2c:
+
+**Pillar 1 — Auto-clear chat context (frontend).**  
+Each API call sends the full conversation history. A long session = more tokens per call. But Claude doesn't need history to know what properties you own — it can always call `property_list_all` or `property_get`. So the frontend reads `lastActivityAt` from `localStorage` on app load; if > 2 hours have passed, it resets `messages` to `[]`. The user gets a fresh session, Claude re-orients via tool calls, and the token count per call stays small. Note: `localStorage` works on all mobile browsers and is especially stable when the app is installed as a PWA (standalone mode has its own isolated storage context that survives backgrounding and restarts).
+
+**Pillar 2 — Prompt caching (backend).**  
+The system prompt and the 18 tool definitions are identical on every single API call — they never change. Anthropic's prompt caching feature re-reads cached content at ~90% discount ($0.30/M instead of $3.00/M for input tokens). Implemented by adding `cache_control: { type: "ephemeral" }` to the system prompt block and the tools array when calling the SDK. The cache TTL is 5 minutes, so within an active session every subsequent call gets the discount. This is the single biggest cost lever.
+
+**Pillar 3 — Use Claude Haiku instead of Sonnet (backend).**  
+Model choice: `claude-haiku-4-5` (`claude-haiku-4-5-20251001`) instead of `claude-sonnet-4-6`. Haiku costs ~$1/$5 per million input/output tokens vs. Sonnet's ~$3/$15. For the kinds of commands this app handles ("mark rent paid", "add repair expense", "list utilities for Kent House"), Haiku is fully capable — these are short, structured intents that map cleanly to a single tool call. Sonnet would be overkill. If a query ever stumps Haiku, we can escalate to Sonnet on retry, but that's not anticipated.
+
+**Combined effect:** With all three pillars, estimated monthly cost for two users doing ~20 interactions/day is well under $1.  
+
+---
