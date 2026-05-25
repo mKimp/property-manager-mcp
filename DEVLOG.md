@@ -58,6 +58,14 @@
 
 ---
 
+### Mock POST /api/chat SSE endpoint (Phase 2a)
+**Phase:** 2a  
+**Date:** 2026-05-24  
+**Problem:** SSE data fields can't contain raw newlines — a `\n` in the payload would be misinterpreted as the SSE field terminator, breaking the stream. Sending markdown (tables, bullet lists) word-by-word would silently mangle line breaks that `react-markdown` needs to render correctly.  
+**Fix:** JSON-wrap every chunk: `data: {"t":"<fragment>"}\n\n`. Newlines and any other special characters are safely escaped inside the JSON string. The frontend does `JSON.parse(data).t` to extract the text. The `[DONE]` sentinel is sent as a raw string (not JSON) so it's trivially detectable. Also fixed the global Express error handler to honour the `status`/`statusCode` field that body-parser sets on `SyntaxError` — without this, invalid JSON bodies returned 500 instead of 400. `STREAM_DELAY_MS` is `0` in `NODE_ENV=test` so the 16-test suite runs in ~30 ms. 57/57 tests pass.  
+
+---
+
 ### Architecture decision: 3 cost pillars to keep Claude API bill under $2/month
 **Phase:** 2 (planning)  
 **Date:** 2026-05-24  

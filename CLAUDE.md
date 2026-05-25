@@ -181,14 +181,14 @@ property-manager-mcp/
 
 #### 2a — Backend: mock `/api/chat` endpoint
 
-- [ ] Add `POST /api/chat` route to `apps/server/src/server.ts` in **mock mode**:
+- [x] Add `POST /api/chat` route to `apps/server/src/server.ts` in **mock mode**:
   - Accepts `{ messages: Array<{role, content}> }` (full conversation history)
   - Returns `Content-Type: text/event-stream`; simulates streaming by writing chunks with `setInterval` or sequential `res.write` calls
   - Each chunk: `data: {"t":"<text fragment>"}\n\n`; stream ends with `data: [DONE]\n\n` (JSON-wrapped so newlines and special characters survive SSE without escaping)
   - Hardcoded responses that exercise the full UI: a plain text reply, a multi-line markdown reply (table, bullet list), and a slow-drip long reply
   - Optional: simple keyword matching on the last user message to return a vaguely relevant mock (e.g. "kent" → mentions Kent House rent)
-- [ ] Write Vitest tests for the mock chat route: SSE headers set correctly, `[DONE]` terminator present, malformed body returns 400
-- [ ] All backend tests pass (`npm test`) before moving to frontend
+- [x] Write Vitest tests for the mock chat route: SSE headers set correctly, `[DONE]` terminator present, malformed body returns 400
+- [x] All backend tests pass (`npm test`) before moving to frontend
 
 #### 2b — Frontend: Chat PWA (against mock)
 
