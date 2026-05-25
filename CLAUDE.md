@@ -192,22 +192,22 @@ property-manager-mcp/
 
 #### 2b — Frontend: Chat PWA (against mock)
 
-- [ ] Scaffold frontend: `npm create vite@latest apps/client -- --template react-ts`
-- [ ] Install React Testing Library + `@testing-library/jest-dom`; extend root `vitest.config.ts` to cover `apps/client/src`
-- [ ] Configure Tailwind CSS for mobile-first layout (dark or light — match Claude.ai aesthetic)
-- [ ] Build core chat components:
+- [x] Scaffold frontend: `npm create vite@latest apps/client -- --template react-ts`
+- [x] Install React Testing Library + `@testing-library/jest-dom`; extend root `vitest.config.ts` to cover `apps/client/src`
+- [x] Configure Tailwind CSS for mobile-first layout (dark or light — match Claude.ai aesthetic)
+- [x] Build core chat components:
   - `<ChatThread>` — scrollable message list; user messages right-aligned, assistant messages left-aligned with a subtle avatar
   - `<MessageBubble>` — renders markdown in assistant replies (use `react-markdown`)
   - `<TypingIndicator>` — three animated dots shown while awaiting the first SSE chunk
   - `<ChatInput>` — textarea + send button; Enter sends, Shift+Enter newline; disabled while streaming
-- [ ] Wire `<ChatInput>` to `POST /api/chat` using the **Fetch SSE pattern** (`fetch` + `ReadableStream`) — append streamed chunks to the assistant message in real time
-- [ ] Conversation state: keep full `messages` array in React state; append each user/assistant turn; send entire history on every request
-- [ ] **Auto-clear context (cost pillar 1):** on app load, read `lastActivityAt` from `localStorage`; if > 2 hours ago, reset `messages` to `[]` (fresh session). Update `lastActivityAt` on every send. Claude re-orients itself via tool calls — no DB memory needed.
-- [ ] Error handling: if the stream errors or the server returns non-200, show an inline retry prompt in the chat thread
-- [ ] Write component tests: `<ChatThread>` renders messages correctly, `<ChatInput>` fires submit, `<MessageBubble>` renders markdown
-- [ ] Install and configure `vite-plugin-pwa`: `manifest.json` (name, short_name, icons, `display: "standalone"`, `start_url: "/"`, theme color), Service Worker (cache-first for static assets, network-first for `/api/`)
-- [ ] All frontend tests pass (`npm test`) before merging to `main`
-- [ ] Environment variable: `VITE_API_BASE_URL` in `.env` (local) and Vercel env vars (prod) pointing at the Render backend
+- [x] Wire `<ChatInput>` to `POST /api/chat` using the **Fetch SSE pattern** (`fetch` + `ReadableStream`) — append streamed chunks to the assistant message in real time
+- [x] Conversation state: keep full `messages` array in React state; append each user/assistant turn; send entire history on every request
+- [x] **Auto-clear context (cost pillar 1):** on app load, read `lastActivityAt` from `localStorage`; if > 2 hours ago, reset `messages` to `[]` (fresh session). Update `lastActivityAt` on every send. Claude re-orients itself via tool calls — no DB memory needed.
+- [x] Error handling: if the stream errors or the server returns non-200, show an inline retry prompt in the chat thread
+- [x] Write component tests: `<ChatThread>` renders messages correctly, `<ChatInput>` fires submit, `<MessageBubble>` renders markdown
+- [x] Install and configure `vite-plugin-pwa`: `manifest.json` (name, short_name, icons, `display: "standalone"`, `start_url: "/"`, theme color), Service Worker (cache-first for static assets, network-first for `/api/`)
+- [x] All frontend tests pass (`npm test`) before merging to `main`
+- [x] Environment variable: `VITE_API_BASE_URL` in `.env` (local) and Vercel env vars (prod) pointing at the Render backend
 
 #### 2c — Wire in real Claude API (swap mock → live)
 

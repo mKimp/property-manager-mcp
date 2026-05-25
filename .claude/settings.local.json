@@ -9,7 +9,16 @@
       "Bash(git -C /Users/baobao/Documents/property-manager-mcp add prisma/schema.prisma .gitignore .env.example CLAUDE.md package.json package-lock.json)",
       "Bash(git -C /Users/baobao/Documents/property-manager-mcp status)",
       "Bash(git -C /Users/baobao/Documents/property-manager-mcp commit -m ' *)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'feat: add seed script for test property data *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "Bash(git commit -m 'docs: mark seed script done in Phase 1 checklist, add devlog entry *)",
+      "Bash(git commit -m 'docs: adopt mock-first strategy for Phase 2 chat UI *)",
+      "Bash(git commit -m 'feat: mock POST /api/chat SSE endpoint \\(Phase 2a\\) *)",
+      "Bash(npm create *)",
+      "Bash(npx vitest *)"
     ]
   }
 }

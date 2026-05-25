@@ -9,7 +9,7 @@
     "build": "npm run build --workspace=apps/server",
     "start": "npm run start --workspace=apps/server",
     "dev": "npm run dev --workspace=apps/server",
-    "test": "vitest run",
+    "test": "vitest run && npm run test --workspace=apps/client",
     "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
