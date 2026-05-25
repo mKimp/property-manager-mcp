@@ -807,3 +807,6 @@ export function startServer(): void {
     console.log(`Express API listening on port ${PORT}`);
   });
 }
+
+// Auto-start when this file is run directly (tsx apps/server/src/server.ts)
+if (require.main === module) startServer();
