@@ -10,10 +10,10 @@
 **Target Users:** Two co-owners (you + a friend) managing a shared portfolio of rental properties from their phones.
 
 **Core Vision:**
-A lightweight, mobile-first property management system built as a Progressive Web App (PWA) on the frontend and a custom Model Context Protocol (MCP) server on the backend. The app allows both users to track properties, tenants, monthly rent collection, repair expenses, and utility payments — from anywhere, on any device, without needing a browser URL bar.
+A lightweight, mobile-first property management system built as a Progressive Web App (PWA) on the frontend and a custom Model Context Protocol (MCP) server on the backend. The UI is a **chat interface** — users type natural language commands ("add utilities for Kent House this month") and the backend routes those to Claude, which interprets the intent and calls the right MCP tool. No forms, no nav menus — just a conversation.
 
-**Why MCP?**
-The backend exposes all business logic as discrete, type-safe MCP tools. This means the same server can be invoked directly from Claude Desktop *and* called via HTTP from the React frontend, giving a dual interface with zero code duplication.
+**Why MCP + Claude API?**
+The backend exposes all business logic as discrete, type-safe MCP tools. This means the same server can be invoked directly from Claude Desktop *and* used as tool definitions for the Claude API chat endpoint, giving a dual interface with zero code duplication. Claude acts as the natural language layer that translates user intent into the correct tool call.
 
 ---
 
@@ -25,10 +25,11 @@ The backend exposes all business logic as discrete, type-safe MCP tools. This me
 │                                                                 │
 │   ┌──────────────────────────┐    ┌────────────────────────┐   │
 │   │  React PWA (Vite + TS)   │    │   Claude Desktop App   │   │
-│   │  Hosted on Vercel/Netlify│    │  points at hosted MCP  │   │
+│   │  Chat UI — no forms      │    │  points at hosted MCP  │   │
 │   │  manifest.json + SW      │    │  server URL (Render)   │   │
 │   └────────────┬─────────────┘    └──────────┬─────────────┘   │
-│                │ HTTPS fetch()               │ HTTPS/MCP        │
+│                │ POST /api/chat              │ HTTPS/MCP        │
+│                │ (SSE stream)                │                  │
 └────────────────┼─────────────────────────────┼─────────────────┘
                  ▼                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -38,26 +39,46 @@ The backend exposes all business logic as discrete, type-safe MCP tools. This me
 │   │              Node.js + Express + TypeScript              │  │
 │   │                   Hosted on Render/Railway               │  │
 │   │                                                          │  │
-│   │   ┌────────────────────────────────────────────────┐    │  │
-│   │   │            MCP Server (SDK ^1.0.0)             │    │  │
-│   │   │  Tools: properties, repairs, rent, utilities   │    │  │
-│   │   │  Input validation: Zod schemas                 │    │  │
-│   │   └────────────────────────────────────────────────┘    │  │
-│   │                          │                               │  │
-│   │   Express HTTP routes wrap MCP tools for REST access     │  │
+│   │   ┌─────────────────┐   ┌──────────────────────────┐    │  │
+│   │   │  MCP Server     │   │  POST /api/chat           │    │  │
+│   │   │  (SDK ^1.0.0)   │   │  1. recv user message    │    │  │
+│   │   │  Tools: props,  │   │  2. call Claude API w/   │    │  │
+│   │   │  repairs, rent, │   │     MCP tools as defs    │    │  │
+│   │   │  utilities      │   │  3. exec tool calls here │    │  │
+│   │   └─────────────────┘   │  4. stream reply via SSE │    │  │
+│   │         (shared)        └──────────────────────────┘    │  │
+│   │              ↕ tool logic reused by both                 │  │
+│   │   REST routes: GET/POST /api/properties, /repairs, …     │  │
 │   └──────────────────────────┼───────────────────────────────┘  │
 │                              │ Prisma ORM                        │
 └──────────────────────────────┼─────────────────────────────────┘
-                               ▼
+                 ▼             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                       DATABASE LAYER                            │
+│                  EXTERNAL SERVICES LAYER                        │
 │                                                                 │
-│              ┌──────────────────────────────┐                  │
-│              │   Turso (libSQL/SQLite)      │                  │
-│              │   free tier, cloud-hosted    │                  │
-│              │   @prisma/adapter-libsql     │                  │
-│              └──────────────────────────────┘                  │
+│   ┌────────────────────────┐   ┌──────────────────────────┐    │
+│   │  Turso (libSQL/SQLite) │   │  Anthropic API           │    │
+│   │  free tier, cloud      │   │  claude-sonnet-4-6       │    │
+│   │  @prisma/adapter-libsql│   │  tool_use + streaming    │    │
+│   └────────────────────────┘   └──────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+**Chat flow (single request):**
+```
+User: "mark Kent House rent as paid for May"
+  ↓
+POST /api/chat  { messages: [...] }
+  ↓
+Claude API (claude-sonnet-4-6, tool_use, streaming)
+  → decides to call: rent_update_record({ propertyId: "b1c2...", year: 2026, month: 5, paid: true })
+  ↓
+Backend executes tool → Prisma → Turso
+  ↓
+Claude formats response (streamed via SSE):
+  "Done! Kent House rent for May 2026 is marked as paid. ✓"
+  ↓
+Frontend renders streamed text in chat thread
 ```
 
 **Monorepo layout (decided):**
@@ -71,7 +92,7 @@ property-manager-mcp/
 └── CLAUDE.md
 ```
 
-**Current State (Phase 1 partial):** The MCP server is operational and storing data in a local `properties.json` file. Express HTTP layer and Prisma/Turso are not yet wired in. No local DB — Turso cloud DB will be used from day one, even during development.
+**Current State (Phase 1 complete):** The MCP server is operational with full Prisma/Turso storage, Express REST routes, Vitest integration tests, and a seed script. Phase 2 (chat UI + Claude API) is next.
 
 ---
 
@@ -82,12 +103,14 @@ property-manager-mcp/
 | **Frontend Framework** | React | with TypeScript |
 | **Frontend Build Tool** | Vite | PWA plugin for manifest + SW |
 | **Frontend Language** | TypeScript | strict mode |
+| **Frontend UI** | Chat interface | No forms — natural language input, streaming response |
 | **PWA** | `vite-plugin-pwa` | manifest.json + Service Worker |
 | **Frontend Hosting** | Vercel or Netlify | HTTPS required for A2HS |
 | **Backend Runtime** | Node.js | ES2022 target |
-| **Backend Framework** | Express | HTTP layer wrapping MCP tools |
+| **Backend Framework** | Express | REST routes + `/api/chat` SSE endpoint |
 | **Backend Language** | TypeScript | strict, Node16 module resolution |
 | **MCP Protocol** | `@modelcontextprotocol/sdk` | ^1.0.0 |
+| **AI / Chat** | `@anthropic-ai/sdk` | claude-sonnet-4-6, tool_use + streaming |
 | **Input Validation** | Zod | ^3.22.4 |
 | **ORM** | Prisma | `@prisma/adapter-libsql` for Turso |
 | **Database** | Turso (libSQL/SQLite) | free tier, persistent, cloud-hosted from day one |
@@ -150,24 +173,42 @@ property-manager-mcp/
 
 ---
 
-### Phase 2 — Mobile-First React Frontend & API Wiring
+### Phase 2 — Chat UI + Claude API Integration
 
-**Goal:** A responsive PWA shell with working views that read/write data through the Express API.
+**Goal:** A chat PWA where users type natural language commands. The backend sends those to Claude, which calls the right MCP tool and streams a plain-English response back.
 
-- [ ] Scaffold frontend with `npm create vite@latest` into `apps/client/` (React + TypeScript template)
-- [ ] Install React Testing Library + `@testing-library/jest-dom`; extend root `vitest.config.ts` to cover `apps/client/`
-- [ ] Configure Tailwind CSS (or equivalent) for mobile-first responsive layout
-- [ ] Build **Properties List view** — card-based layout, shows address, tenant, rent amount
-- [ ] Build **Property Detail view** — shows all metadata, lease dates, mortgage, tenants
-- [ ] Build **Add / Edit Property form** — calls `POST /api/properties`
-- [ ] Build **Rent Records view** — month-by-month grid, mark paid/unpaid, collection rate summary
-- [ ] Build **Repair Expenses view** — list with totals by year, add new entry form
-- [ ] Build **Utilities view** — monthly grid per utility type, mark paid
-- [ ] Wire all frontend fetches to Express API endpoints (no direct MCP calls from browser)
-- [ ] Add loading states, optimistic UI updates, and basic error handling toasts
-- [ ] Write component tests for key views (Properties List, Rent Records, forms) using React Testing Library
+#### 2a — Backend: Claude API chat endpoint
+
+- [ ] Install `@anthropic-ai/sdk` in `apps/server/`; add `ANTHROPIC_API_KEY` to `.env`, `.env.example`, and Render env vars
+- [ ] Write a system prompt (`apps/server/src/chat/systemPrompt.ts`) that describes the assistant role and the property portfolio context
+- [ ] Build a tool registry (`apps/server/src/chat/tools.ts`) that converts existing Zod MCP schemas into Anthropic `Tool` input_schema objects — one entry per MCP tool (property_list_all, property_get, property_add, property_update, property_search, property_delete, repair_add, repair_delete, repair_list, repair_list_by_year, rent_add_record, rent_update_record, rent_list_by_year, rent_list_all, utilities_add_record, utilities_update_record, utilities_list_by_year, utilities_list_all)
+- [ ] Build a tool executor (`apps/server/src/chat/executor.ts`) that receives a `tool_use` block from Claude, routes it to the correct existing tool function in `apps/server/src/tools/`, and returns the result as a `tool_result` block
+- [ ] Add `POST /api/chat` route to `apps/server/src/server.ts`:
+  - Accepts `{ messages: Array<{role, content}> }` (full conversation history from client)
+  - Calls Claude API with `stream: true`, the system prompt, tool registry, and message history
+  - Agentic loop: while Claude emits `tool_use` blocks, execute the tool, append `tool_result`, continue streaming
+  - Streams Claude's final text response to the client via **Server-Sent Events (SSE)**
+  - Returns `Content-Type: text/event-stream`; each chunk is `data: <text>\n\n`; closes with `data: [DONE]\n\n`
+- [ ] Write Vitest tests for the chat route (mock `@anthropic-ai/sdk`): happy path text response, single tool call round-trip, unknown tool name error, malformed body 400
+- [ ] All backend tests pass (`npm test`) before moving to frontend
+
+#### 2b — Frontend: Chat PWA
+
+- [ ] Scaffold frontend: `npm create vite@latest apps/client -- --template react-ts`
+- [ ] Install React Testing Library + `@testing-library/jest-dom`; extend root `vitest.config.ts` to cover `apps/client/src`
+- [ ] Configure Tailwind CSS for mobile-first layout (dark or light — match Claude.ai aesthetic)
+- [ ] Build core chat components:
+  - `<ChatThread>` — scrollable message list; user messages right-aligned, assistant messages left-aligned with a subtle avatar
+  - `<MessageBubble>` — renders markdown in assistant replies (use `react-markdown`)
+  - `<TypingIndicator>` — three animated dots shown while awaiting the first SSE chunk
+  - `<ChatInput>` — textarea + send button; Enter sends, Shift+Enter newline; disabled while streaming
+- [ ] Wire `<ChatInput>` to `POST /api/chat` using the **Fetch SSE pattern** (`fetch` + `ReadableStream`) — append streamed chunks to the assistant message in real time
+- [ ] Conversation state: keep full `messages` array in React state; append each user/assistant turn; send entire history on every request so Claude has context
+- [ ] Error handling: if the stream errors or the server returns non-200, show an inline retry prompt in the chat thread
+- [ ] Write component tests: `<ChatThread>` renders messages correctly, `<ChatInput>` fires submit, `<MessageBubble>` renders markdown
+- [ ] Install and configure `vite-plugin-pwa`: `manifest.json` (name, short_name, icons, `display: "standalone"`, `start_url: "/"`, theme color), Service Worker (cache-first for static assets, network-first for `/api/`)
 - [ ] All frontend tests pass (`npm test`) before merging to `main`
-- [ ] Environment variable setup: `VITE_API_BASE_URL` pointing to deployed Render/Railway backend (no local Express server — hosted-only)
+- [ ] Environment variable: `VITE_API_BASE_URL` in `.env` (local) and Vercel env vars (prod) pointing at the Render backend
 
 ---
 
@@ -195,7 +236,7 @@ property-manager-mcp/
 
 - [ ] Create GitHub repo and push local `main` branch (`git remote add origin <url> && git push -u origin main`)
 - [ ] Connect GitHub repo to Render (New Web Service → connect repo → select `main` branch) — every push to `main` will trigger an automatic redeploy
-- [ ] Deploy Express + MCP backend to Render — set env vars: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `PORT`, `ALLOWED_ORIGINS`
+- [ ] Deploy Express + MCP backend to Render — set env vars: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `PORT`, `ALLOWED_ORIGINS`
 - [ ] Set Render **start command** to `npx prisma migrate deploy && node dist/index.js` — ensures any pending migrations run automatically before every deploy
 - [ ] Verify Prisma connects to Turso and all MCP tools respond correctly via the hosted URL
 - [ ] Connect same GitHub repo to Vercel (Import Project → select repo → select `main` branch) — every push to `main` will trigger an automatic frontend redeploy
@@ -287,6 +328,11 @@ Then restart Claude Desktop.
 | **DB choice** | **Turso** (libSQL/SQLite). Render PostgreSQL free tier expires after 90 days; Turso free tier is persistent and more than sufficient at our scale. |
 | **Monorepo vs. two repos** | **Monorepo** with npm workspaces. `apps/server/` + `apps/client/` under one repo. |
 | **Local vs. hosted DB** | **Hosted-only.** Turso cloud DB used from day one — no local SQLite, no JSON file fallback. |
+| **Frontend UI paradigm** | **Chat-only** (no forms, no nav views). Users type natural language; Claude interprets and calls MCP tools. |
+| **Claude model for chat** | **claude-sonnet-4-6** — fast, supports tool_use + streaming, cost-effective for two users. |
+| **Chat streaming** | **SSE (Server-Sent Events)** from `POST /api/chat`. Each text delta is `data: <chunk>\n\n`; stream ends with `data: [DONE]\n\n`. |
+| **Tool execution location** | **Backend only.** Claude API returns `tool_use` blocks; the Express server executes them against Prisma/Turso, never the frontend. |
+| **Anthropic API key** | Backend env var only (`ANTHROPIC_API_KEY`). Never exposed to the client. |
 | **Auth strategy** | Shared API key in env var (simplest) vs. per-user credentials. Only two users — simplicity preferred. |
 | **Utilities tools** | **Done.** All four utilities tools active and consistent (year/month default to current when omitted). |
 | **Claude Desktop** | **Hosted URL.** `claude_desktop_config.json` will point at the Render/Railway URL — no local server needed. |
