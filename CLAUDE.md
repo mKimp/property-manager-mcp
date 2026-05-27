@@ -213,18 +213,18 @@ property-manager-mcp/
 
 *Do this only after the UI is complete and passing tests.*
 
-- [ ] Install `@anthropic-ai/sdk` in `apps/server/`; add `ANTHROPIC_API_KEY` to `.env`, `.env.example`, and Render env vars
-- [ ] Write system prompt (`apps/server/src/chat/systemPrompt.ts`) — assistant role and property portfolio context
-- [ ] Build tool registry (`apps/server/src/chat/tools.ts`) — convert existing Zod MCP schemas into Anthropic `Tool` input_schema objects (all 18 MCP tools: property_list_all, property_get, property_add, property_update, property_search, property_delete, repair_add, repair_delete, repair_list, repair_list_by_year, rent_add_record, rent_update_record, rent_list_by_year, rent_list_all, utilities_add_record, utilities_update_record, utilities_list_by_year, utilities_list_all)
-- [ ] Build tool executor (`apps/server/src/chat/executor.ts`) — receives a `tool_use` block from Claude, routes to the correct tool function, returns a `tool_result` block
-- [ ] Replace mock handler in `POST /api/chat` with the real implementation:
+- [x] Install `@anthropic-ai/sdk` in `apps/server/`; add `ANTHROPIC_API_KEY` to `.env`, `.env.example`, and Render env vars
+- [x] Write system prompt (`apps/server/src/chat/systemPrompt.ts`) — assistant role and property portfolio context
+- [x] Build tool registry (`apps/server/src/chat/tools.ts`) — convert existing Zod MCP schemas into Anthropic `Tool` input_schema objects (all 18 MCP tools: property_list_all, property_get, property_add, property_update, property_search, property_delete, repair_add, repair_delete, repair_list, repair_list_by_year, rent_add_record, rent_update_record, rent_list_by_year, rent_list_all, utilities_add_record, utilities_update_record, utilities_list_by_year, utilities_list_all)
+- [x] Build tool executor (`apps/server/src/chat/executor.ts`) — receives a `tool_use` block from Claude, routes to the correct tool function, returns a `tool_result` block
+- [x] Replace mock handler in `POST /api/chat` with the real implementation:
   - **Model (cost pillar 3):** use `claude-haiku-4-5` (`claude-haiku-4-5-20251001`) — fast, cheap (~$1/$5 per M tokens), fully capable of parsing property management commands and calling tools
   - **Prompt caching (cost pillar 2):** add `cache_control: { type: "ephemeral" }` to the system prompt block and to the tool definitions array — static content, so they cache on the first call and are re-read at a 90% discount (~$0.30/M instead of $3/M) for the rest of the session
   - Calls Claude API with `stream: true`, system prompt, tool registry, and message history
   - Agentic loop: while Claude emits `tool_use` blocks → execute tool → append `tool_result` → continue streaming
   - Streams Claude's final text via same SSE format (`data: {"t":"<chunk>"}\n\n` … `data: [DONE]\n\n`) — **no frontend changes needed**
-- [ ] Update Vitest tests for the real chat route (mock `@anthropic-ai/sdk`): happy path, single tool call round-trip, unknown tool error, malformed body 400
-- [ ] All tests pass (`npm test`) before merging to `main`
+- [x] Update Vitest tests for the real chat route (mock `../chat/client.js`): happy path, single tool call round-trip, unknown tool error, malformed body 400
+- [x] All tests pass (`npm test`) before merging to `main`
 
 ---
 
