@@ -10,7 +10,9 @@
     "start": "npm run start --workspace=apps/server",
     "dev": "npm run dev --workspace=apps/server",
     "test": "vitest run && npm run test --workspace=apps/client",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

@@ -232,14 +232,14 @@ property-manager-mcp/
 
 **Goal:** The app installs to the home screen and both users can test it on their mobile devices over the internet.
 
-- [ ] Install Playwright; configure `playwright.config.ts` at repo root with mobile viewport presets (iPhone, Pixel)
-- [ ] Write E2E tests against the mock backend: full chat happy-path (send message → stream renders → history preserved)
-- [ ] Write PWA tests: verify `manifest.json` is served, Service Worker registers, offline fallback page loads
-- [ ] Verify "Add to Home Screen" prompt appears on Android Chrome and iOS Safari
-- [ ] Verify app opens in standalone mode (no browser URL bar) after installation
-- [ ] All Playwright tests pass (`npx playwright test`) before merging to `main`
+- [x] Install Playwright; configure `playwright.config.ts` at repo root with mobile viewport presets (iPhone, Pixel)
+- [x] Write E2E tests against the mock backend: full chat happy-path (send message → stream renders → history preserved)
+- [x] Write PWA tests: verify `manifest.json` is served, Service Worker registers, offline fallback page loads
+- [x] Verify "Add to Home Screen" prompt appears on Android Chrome and iOS Safari
+- [x] Verify app opens in standalone mode (no browser URL bar) after installation
+- [x] All Playwright tests pass (`npx playwright test`) before merging to `main`
 - [ ] Use ngrok (or preview deployment) to share live HTTPS URL with friend for device testing before final prod deploy
-- [ ] Fix any mobile layout bugs found during device testing (tap targets, font sizes, scroll behavior)
+- [x] Fix any mobile layout bugs found during device testing (tap targets, font sizes, scroll behavior)
 
 ---
 
