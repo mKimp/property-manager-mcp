@@ -100,3 +100,19 @@ Model choice: `claude-haiku-4-5` (`claude-haiku-4-5-20251001`) instead of `claud
 **Fix:** Extracted the Anthropic client into `apps/server/src/chat/client.ts` — tests mock that thin TypeScript module directly, avoiding the CJS package entirely in Vitest. Fixed the by-reference mutation by spreading `[...apiMessages]` at each `stream()` call site so each call receives an immutable snapshot. Mocking strategy changed from `vi.mock("@anthropic-ai/sdk")` to `vi.mock("../chat/client.js")` with a hoisted `mockGetClient` that returns a fake `{ messages: { stream: streamMockFn } }` object.  
 
 ---
+
+### Claude Haiku hallucinating rent data instead of calling tools
+**Phase:** 2c (post-merge debugging)  
+**Date:** 2026-05-26  
+**Problem:** After the first successful response, every subsequent query — regardless of intent — returned the exact same Kent House rent table. Even a completely fresh request ("show me repairs for Kent House" with no history) produced the rent table without any tool calls firing. Two compounding bugs:
+
+1. **Haiku skipping tool calls.** Claude Haiku sometimes bypasses tool use and generates a plausible-sounding response from context. The original system prompt had no explicit rule against this, so Haiku "remembered" the rent data it had returned once and started reproducing it verbatim.
+2. **Snowballing conversation history.** Once the first wrong response was in the history, each subsequent turn contained one more (user, wrong-assistant) pair all showing rent data. Haiku pattern-matched on its own bad responses and kept repeating them. By turn 5 the history contained four identical Kent House rent tables, making it nearly impossible for the model to break the loop.
+3. **`.env` not found in workspace mode.** When debugging, restarting the server via `npm run dev --workspace=apps/server` failed with "ANTHROPIC_API_KEY not set." `npm workspace` changes `process.cwd()` to `apps/server/` before running `tsx`, but the `.env` file lives at the monorepo root, so `dotenv/config` couldn't find it.
+
+**Fix:**
+1. Rewrote `apps/server/src/chat/systemPrompt.ts` to add a **CRITICAL RULE** block: "Never generate, recall, or repeat property data from memory — always call a tool." Added an explicit **tool routing map** (repairs/maintenance → `repair_list`; rent/payment → `rent_list_*`; utilities → `utilities_list_*`) and a numbered **workflow** (property_search → fetch records → respond) so Haiku has unambiguous instructions.
+2. Copied root `.env` to `apps/server/.env` and added `apps/server/.env` to `.gitignore`. The workspace-local copy is always in sync since it's derived from root `.env`, and the gitignore entry prevents the API key from being committed.
+3. User must clear browser `localStorage` (`chatMessages` key) after a poisoned session before the new prompt takes effect.
+
+---
