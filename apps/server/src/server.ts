@@ -20,6 +20,11 @@ import {
   UpdateUtilitiesRecordInputShape,
 } from "./schemas/index.js";
 import { Property, RentRecord, UtilitiesRecord } from "./types.js";
+import type Anthropic from "@anthropic-ai/sdk";
+import { buildSystemPrompt } from "./chat/systemPrompt.js";
+import { TOOLS } from "./chat/tools.js";
+import { executeTool } from "./chat/executor.js";
+import { getAnthropicClient } from "./chat/client.js";
 
 // ---------------------------------------------------------------------------
 // App setup
@@ -608,10 +613,10 @@ app.patch(
 );
 
 // ---------------------------------------------------------------------------
-// Chat — mock SSE endpoint (Phase 2a)
-// TODO Phase 2c: replace mockReply + streaming loop with real Claude API
-//               call + tool executor. Wire format stays identical so the
-//               frontend never needs to change.
+// Chat — Claude API streaming endpoint (Phase 2c)
+// Wire format is identical to the old mock so the frontend never changes:
+//   text delta  →  data: {"t":"<chunk>"}\n\n
+//   end of stream →  data: [DONE]\n\n
 // ---------------------------------------------------------------------------
 
 const ChatRequestSchema = z.object({
@@ -636,114 +641,7 @@ function sseChunk(text: string): string {
 
 const SSE_DONE = "data: [DONE]\n\n";
 
-/**
- * Delay between chunks — 0 ms in test env so the suite stays fast,
- * 20 ms in dev/prod so streaming looks natural in the UI.
- */
-const STREAM_DELAY_MS = process.env.NODE_ENV === "test" ? 0 : 20;
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-/**
- * Pick a hardcoded markdown reply based on simple keyword matching.
- * Exercises: plain text, tables, bullet lists, bold, italic.
- */
-function mockReply(lastUserMessage: string): string {
-  const q = lastUserMessage.toLowerCase();
-
-  if (q.includes("kent")) {
-    return (
-      "Here's the rent status for **Kent House** (22902 112th Pl SE, Kent WA):\n\n" +
-      "| Month | Amount | Status |\n" +
-      "|-------|--------|--------|\n" +
-      "| Feb 2026 | $4,100 | ✅ Paid |\n" +
-      "| Mar 2026 | $4,100 | ✅ Paid |\n" +
-      "| Apr 2026 | $4,100 | ✅ Paid |\n" +
-      "| May 2026 | $4,100 | ⏳ Unpaid |\n\n" +
-      "Collection rate: **75%** for 2026. Monthly mortgage: $2,822.81."
-    );
-  }
-
-  if (q.includes("portland")) {
-    return (
-      "**Portland House** — 13891 SE Rogers Ln, Clackamas OR 97015\n\n" +
-      "Managed by Breakwater Northwest. Lease: Oct 28 2023 – Oct 31 2026. " +
-      "Monthly rent: **$2,770**. No rent records logged yet.\n\n" +
-      "Repair on file: fence repair $950 (Apr 1 2026)."
-    );
-  }
-
-  if (q.includes("seattle")) {
-    return (
-      "**Seattle Single House** — 9343 48th Ave S, Seattle WA 98118\n\n" +
-      "Tenants: Thao Nguyen and Dat Duong. Lease: Sep 1 2025 – Aug 31 2026. " +
-      "Monthly rent: **$1,800**.\n\n" +
-      "_Notes: two cats, shared water & electricity, tenant pays internet. No smoking._"
-    );
-  }
-
-  if (q.includes("repair") || q.includes("expense")) {
-    return (
-      "Repair expenses for 2026:\n\n" +
-      "- **Portland House** — Fence repair: $950.00 (Apr 1)\n" +
-      "- **Kent House** — Blockage drainage repair: $2,989.35 (Apr 13)\n" +
-      "- **Kent House** — New refrigerator: $370.00 (Apr 1)\n\n" +
-      "**Total 2026 repairs: $4,309.35**"
-    );
-  }
-
-  if (q.includes("utilit")) {
-    return (
-      "Utilities for **Kent House** in 2026:\n\n" +
-      "| Month | Electricity | Water | Total | Paid |\n" +
-      "|-------|-------------|-------|-------|------|\n" +
-      "| Jan | $57.92 | $39.70 | $97.62 | ✅ |\n" +
-      "| Feb | $405.18 | $15.41 | $420.59 | ✅ |\n\n" +
-      "No utilities logged for other properties yet. Want me to add one?"
-    );
-  }
-
-  if (q.includes("rent")) {
-    return (
-      "I can help with rent records! Try:\n\n" +
-      '- *"Mark Kent House rent as paid for May 2026"*\n' +
-      '- *"Add a rent record for Seattle House for June"*\n' +
-      '- *"Show me Kent House rent for 2026"*\n\n' +
-      "Which property and month?"
-    );
-  }
-
-  if (
-    q.includes("list") ||
-    q.includes("all") ||
-    q.includes("properties") ||
-    q.includes("portfolio")
-  ) {
-    return (
-      "You have **4 properties** in the portfolio:\n\n" +
-      "| Property | Location | Rent | Tenant(s) |\n" +
-      "|----------|----------|------|-----------|\n" +
-      "| Portland House | Clackamas, OR | $2,770 | — |\n" +
-      "| Seattle Single House | Seattle, WA | $1,800 | Thao + Dat |\n" +
-      "| Kent House | Kent, WA | $4,100 | Ramon |\n" +
-      "| Test Property | San Jose, CA | $1,000 | — |\n\n" +
-      "Total monthly rent: **$9,670**"
-    );
-  }
-
-  // Default — help menu
-  return (
-    "Hi! I'm your property management assistant 🏠\n\n" +
-    "Here's what I can help with:\n\n" +
-    '- **View portfolio** — *"show all properties"*\n' +
-    '- **Property details** — *"tell me about Kent House"*\n' +
-    '- **Rent tracking** — *"mark Kent House rent paid for May"*\n' +
-    '- **Repairs** — *"show all repair expenses for 2026"*\n' +
-    '- **Utilities** — *"add utilities for Kent House this month"*\n\n' +
-    "What would you like to do?"
-  );
-}
-
-// POST /api/chat — mock streaming chat
+// POST /api/chat — Claude API streaming with tool-use agentic loop
 app.post(
   "/api/chat",
   asyncHandler(async (req, res) => {
@@ -753,22 +651,78 @@ app.post(
       return;
     }
 
-    const { messages } = parsed.data;
-    const lastUser = [...messages].reverse().find((m) => m.role === "user");
-    const reply = mockReply(lastUser?.content ?? "");
-
-    // SSE headers
+    // SSE headers — identical wire format to the old mock
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no"); // prevent nginx buffering in prod
     res.flushHeaders();
 
-    // Stream reply in 5-character chunks to simulate token drip
-    const CHUNK = 5;
-    for (let i = 0; i < reply.length; i += CHUNK) {
-      res.write(sseChunk(reply.slice(i, i + CHUNK)));
-      if (STREAM_DELAY_MS > 0) await sleep(STREAM_DELAY_MS);
+    try {
+      const client = getAnthropicClient();
+
+      // Build message history for the Anthropic API.
+      // Incoming messages have string content; Anthropic accepts that directly.
+      const apiMessages: Anthropic.MessageParam[] = parsed.data.messages.map(
+        (m) => ({ role: m.role, content: m.content })
+      );
+
+      // Agentic loop: stream → collect text → handle tool_use → repeat
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const stream = client.messages.stream({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 4096,
+          // cache_control on the last system block caches both the tools list
+          // (rendered before system) and this block together — cost pillar 2.
+          system: [
+            {
+              type: "text",
+              text: buildSystemPrompt(),
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+          tools: TOOLS,
+          messages: [...apiMessages], // snapshot so mutations after this call don't affect what was sent
+        });
+
+        // Forward text deltas to the SSE stream in real time
+        for await (const event of stream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            res.write(sseChunk(event.delta.text));
+          }
+        }
+
+        const response = await stream.finalMessage();
+        apiMessages.push({ role: "assistant", content: response.content });
+
+        // No tool calls → we're done
+        if (response.stop_reason !== "tool_use") break;
+
+        // Execute every tool_use block and collect results
+        const toolUseBlocks = response.content.filter(
+          (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
+        );
+        const toolResults: Anthropic.ToolResultBlockParam[] = [];
+        for (const tu of toolUseBlocks) {
+          const result = await executeTool(
+            tu.name,
+            tu.input as Record<string, unknown>
+          );
+          toolResults.push({
+            type: "tool_result",
+            tool_use_id: tu.id,
+            content: result,
+          });
+        }
+        apiMessages.push({ role: "user", content: toolResults });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "An error occurred.";
+      res.write(sseChunk(`\n\nError: ${msg}`));
     }
 
     res.write(SSE_DONE);
