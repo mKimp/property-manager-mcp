@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export type Message = {
   role: 'user' | 'assistant'
@@ -30,7 +31,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       </div>
       <div className="max-w-[80%] bg-[#313244] rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed prose-chat text-[#cdd6f4]">
         {message.content ? (
-          <ReactMarkdown>{message.content}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
         ) : (
           <span className="opacity-40 italic">…</span>
         )}
