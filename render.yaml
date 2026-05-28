@@ -3,7 +3,11 @@ services:
     name: property-manager-api
     runtime: node
     buildCommand: npm install && npx prisma generate && npm run build --workspace=apps/server
-    startCommand: npx prisma migrate deploy && npm run start --workspace=apps/server
+    # prisma migrate deploy is intentionally omitted: this project uses Turso
+    # (cloud libsql) for both dev and prod, so migrations are already applied
+    # before code reaches Render. The sqlite provider cannot run migrate deploy
+    # against a libsql:// URL anyway — run `npx prisma migrate dev` locally instead.
+    startCommand: npm run start --workspace=apps/server
     plan: free
     envVars:
       - key: NODE_VERSION
