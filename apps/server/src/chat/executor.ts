@@ -143,7 +143,7 @@ async function propertyAdd(input: Record<string, unknown>): Promise<string> {
   const property: Property = {
     id: uuidv4(),
     propertyName: data.propertyName,
-    address: { country: "US", ...data.address },
+    address: { ...data.address, country: (data.address as Partial<typeof data.address>).country ?? "US" },
     rent: data.rent,
     currency: (data.currency as string) ?? "USD",
     tenants: data.tenants ?? [],
