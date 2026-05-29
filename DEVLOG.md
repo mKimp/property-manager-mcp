@@ -117,6 +117,38 @@ Model choice: `claude-haiku-4-5` (`claude-haiku-4-5-20251001`) instead of `claud
 
 ---
 
+### Phase 4 — Production Deployment (Render + Vercel)
+**Phase:** 4  
+**Date:** 2026-05-28  
+**Problem:** CORS preflight responses were missing `Access-Control-Allow-Origin` because `ALLOWED_ORIGINS` was not set on Render, so the server defaulted to localhost-only. curl tests passed (curl ignores CORS) but the browser blocked all `/api/chat` requests from the Vercel frontend.  
+**Fix:** Set `ALLOWED_ORIGINS=https://property-manager-mcp-client.vercel.app` in the Render dashboard env vars. Backend live at `https://property-manager-api-ylae.onrender.com`, frontend live at `https://property-manager-mcp-client.vercel.app`. Chat, streaming, and Turso DB all verified working in production.  
+
+---
+
+### Shared API key auth for /api/* routes
+**Phase:** 4  
+**Date:** 2026-05-28  
+**Problem:** The Render backend URL was fully public — anyone who found `https://property-manager-api-ylae.onrender.com` could read and write all property data with no credentials at all. The Vercel frontend JS bundle also had `VITE_API_KEY` baked in, meaning anyone who opened the Vercel URL got the key automatically and could hit the API freely.  
+**Fix:** Added `X-API-Key` middleware in `server.ts` that checks all `/api/*` requests against `process.env.API_KEY`. If the env var is not set, the middleware warns and passes through (dev/test mode — no test changes needed). Frontend reads `VITE_API_KEY` (baked into the bundle by Vite at build time) and sends it as `X-API-Key` on every fetch. Set `API_KEY` on Render and `VITE_API_KEY` on Vercel to the same random 32-byte hex value. Random people hitting the Render URL directly now get 401.  
+
+---
+
+### Vercel Edge Middleware — HTTP Basic Auth
+**Phase:** 4  
+**Date:** 2026-05-28  
+**Problem:** The API key in `VITE_API_KEY` is baked into the JS bundle, so anyone who opens the Vercel URL can find it in DevTools → Sources and use it directly against the API. The frontend itself had no gate — anyone with the URL could load the app.  
+**Fix:** Added `apps/client/middleware.ts` using Vercel Edge Middleware (`@vercel/edge`). It runs at the CDN edge before any file is served. If `BASIC_AUTH_USER` and `BASIC_AUTH_PASSWORD` env vars are set on Vercel, it requires HTTP Basic Auth (browser shows native username/password dialog). Correct credentials → `next()` passes through. Wrong/missing credentials → 401 + `WWW-Authenticate` header triggers the browser dialog again. If the env vars are not set, the middleware passes through (local dev). This means the JS bundle — and the API key inside it — never reaches an unauthenticated visitor.  
+
+---
+
+### Mobile PWA layout — safe areas, notch, home indicator, tables
+**Phase:** 4  
+**Date:** 2026-05-28  
+**Problem:** Several issues when the app was installed to the home screen on iPhone: (1) The header content was partially hidden behind the notch/status bar because `viewport-fit=cover` and `env(safe-area-inset-top)` were missing. (2) The chat input was hidden behind the home indicator at the bottom of the screen. (3) The `<title>` was "client" (Vite's default) instead of "Property Manager". (4) The Apple PWA meta tags were missing, so the status bar wasn't styled correctly in standalone mode. (5) Wide markdown tables (e.g. property listings) overflowed the message bubble on narrow screens.  
+**Fix:** Added `viewport-fit=cover` and Apple PWA meta tags (`apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style: black-translucent`, `apple-mobile-web-app-title`) to `index.html`. Fixed title. Added `.safe-top` / `.safe-bottom` CSS helpers using `max(0.75rem, env(safe-area-inset-*))` — applied to the header and chat input respectively. Wrapped all markdown `<table>` elements in a custom `<div class="table-wrap">` (via react-markdown's `components` prop) with `overflow-x: auto` so tables scroll horizontally instead of overflowing. Widened assistant message bubbles to `max-w-[92%] flex-1`. Bumped input font to `text-base` and minimum tap targets to 44–46px.  
+
+---
+
 ### Phase 3 — Playwright E2E + PWA Tests
 **Phase:** 3  
 **Date:** 2026-05-26  
