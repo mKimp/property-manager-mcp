@@ -7,9 +7,9 @@ function App() {
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e2e]">
-      {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-[#313244] bg-[#181825]">
-        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-base">
+      {/* Header — safe-top pads under the iPhone notch / status bar */}
+      <header className="flex items-center gap-3 px-4 pb-3 border-b border-[#313244] bg-[#181825] safe-top">
+        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-base flex-shrink-0">
           🏠
         </div>
         <div>
@@ -34,7 +34,7 @@ function App() {
         </div>
       )}
 
-      {/* Input */}
+      {/* Input — safe-bottom lifts above the home indicator */}
       <ChatInput onSubmit={sendMessage} isStreaming={isStreaming} />
     </div>
   )

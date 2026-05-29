@@ -10,47 +10,66 @@ body {
   color: #cdd6f4;
   font-family: system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Prevent iOS rubber-band scroll on the body itself */
+  overscroll-behavior: none;
 }
 
 #root {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  /* Keep content within the screen — children add their own safe-area padding */
+  overflow: hidden;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #45475a;
-  border-radius: 3px;
+/* Scrollbar styling (desktop) */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
+
+/* ── Safe-area helpers ────────────────────────────────────────────────────── */
+
+/* Header: background fills up into the notch area, text sits below it */
+.safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
 }
 
-/* Markdown content inside message bubbles */
+/* Input bar: sits above the home-indicator / gesture bar */
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* ── Markdown inside message bubbles ──────────────────────────────────────── */
+
+.prose-chat p { margin: 0.25em 0; }
+.prose-chat ul, .prose-chat ol { margin: 0.5em 0; padding-left: 1.5em; }
+.prose-chat li { margin: 0.15em 0; }
+
 .prose-chat h1, .prose-chat h2, .prose-chat h3 {
   font-weight: 600;
   margin-top: 0.75em;
   margin-bottom: 0.25em;
 }
-.prose-chat p { margin: 0.25em 0; }
-.prose-chat ul, .prose-chat ol { margin: 0.5em 0; padding-left: 1.5em; }
-.prose-chat li { margin: 0.15em 0; }
+
+/* Tables: scrollable horizontally so they never overflow the bubble */
+.prose-chat .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0.5em 0;
+}
 .prose-chat table {
   border-collapse: collapse;
-  width: 100%;
-  margin: 0.5em 0;
-  font-size: 0.875em;
+  min-width: 100%;
+  font-size: 0.8125em; /* 13px — readable but compact on mobile */
 }
 .prose-chat th, .prose-chat td {
   border: 1px solid #45475a;
-  padding: 4px 8px;
+  padding: 5px 10px;
   text-align: left;
+  white-space: nowrap; /* keep columns from wrapping — scroll instead */
 }
-.prose-chat th { background: #313244; }
+.prose-chat th { background: #1e1e2e; font-weight: 600; }
+
 .prose-chat code {
   background: #313244;
   padding: 1px 5px;
@@ -64,7 +83,4 @@ body {
   border-radius: 6px;
   overflow-x: auto;
 }
-.prose-chat pre code {
-  background: none;
-  padding: 0;
-}
+.prose-chat pre code { background: none; padding: 0; }
