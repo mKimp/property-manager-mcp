@@ -40,6 +40,25 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 // ---------------------------------------------------------------------------
+// API key auth middleware
+// Protects all /api/* routes. Exempt: /health (Render health checks).
+// If API_KEY env var is not set, logs a warning and allows all requests
+// through — this keeps local dev and test runs working without config.
+// ---------------------------------------------------------------------------
+
+const API_KEY = process.env.API_KEY;
+if (!API_KEY) {
+  console.warn("WARNING: API_KEY env var is not set — all /api/* requests are unauthenticated.");
+}
+
+app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+  if (!API_KEY) return next(); // no key configured → open (dev/test mode)
+  const provided = req.headers["x-api-key"];
+  if (provided === API_KEY) return next();
+  res.status(401).json({ error: "Unauthorized: invalid or missing API key." });
+});
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 

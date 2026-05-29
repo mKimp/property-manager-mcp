@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import type { Message } from '../components/MessageBubble'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+const API_KEY = import.meta.env.VITE_API_KEY ?? ''
 const INACTIVITY_MS = 2 * 60 * 60 * 1000 // 2 hours
 
 function loadSession(): Message[] {
@@ -53,7 +54,10 @@ export function useChat() {
     try {
       const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+        },
         body: JSON.stringify({ messages: nextMessages }),
       })
 
