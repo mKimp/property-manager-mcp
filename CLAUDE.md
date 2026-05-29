@@ -247,17 +247,17 @@ property-manager-mcp/
 
 **Goal:** Both users can access the live app over HTTPS from anywhere. DB is already live (set up in Phase 1); this phase is purely about deploying services.
 
-- [ ] Create GitHub repo and push local `main` branch (`git remote add origin <url> && git push -u origin main`)
-- [ ] Connect GitHub repo to Render (New Web Service → connect repo → select `main` branch) — every push to `main` will trigger an automatic redeploy
-- [ ] Deploy Express + MCP backend to Render — set env vars: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `PORT`, `ALLOWED_ORIGINS`
-- [ ] Set Render **start command** to `npx prisma migrate deploy && node dist/index.js` — ensures any pending migrations run automatically before every deploy
-- [ ] Verify Prisma connects to Turso and all MCP tools respond correctly via the hosted URL
-- [ ] Connect same GitHub repo to Vercel (Import Project → select repo → select `main` branch) — every push to `main` will trigger an automatic frontend redeploy
-- [ ] Set `VITE_API_BASE_URL` to live Render backend URL in Vercel env vars (Settings → Environment Variables)
-- [ ] Verify HTTPS is active on frontend (required for PWA installation)
+- [x] Create GitHub repo and push local `main` branch (`git remote add origin <url> && git push -u origin main`)
+- [x] Connect GitHub repo to Render (New Web Service → connect repo → select `main` branch) — every push to `main` will trigger an automatic redeploy
+- [x] Deploy Express + MCP backend to Render — set env vars: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `PORT`, `ALLOWED_ORIGINS`
+- [x] Set Render **start command** to `npx prisma migrate deploy && node dist/index.js` — ensures any pending migrations run automatically before every deploy
+- [x] Verify Prisma connects to Turso and all MCP tools respond correctly via the hosted URL
+- [x] Connect same GitHub repo to Vercel (Import Project → select repo → select `main` branch) — every push to `main` will trigger an automatic frontend redeploy
+- [x] Set `VITE_API_BASE_URL` to live Render backend URL in Vercel env vars (Settings → Environment Variables)
+- [x] Verify HTTPS is active on frontend (required for PWA installation)
 - [ ] Test "Add to Home Screen" on live HTTPS domain (both Android + iOS)
-- [ ] Add basic access control — shared API key in request headers or HTTP Basic Auth — so data isn't publicly readable
-- [ ] Store all credentials in environment variables (never hardcoded)
+- [x] Add basic access control — shared API key in request headers or HTTP Basic Auth — so data isn't publicly readable
+- [x] Store all credentials in environment variables (never hardcoded)
 - [ ] Point Claude Desktop at hosted MCP server: update `claude_desktop_config.json` to use the Render URL instead of a local path
 - [ ] Smoke test full flow on production: add property → add rent record → mark paid → view on mobile
 
