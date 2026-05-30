@@ -1,14 +1,14 @@
 /**
  * System prompt for the property management chat assistant.
  * Kept in a separate file so it can be cached with cache_control.
+ *
+ * IMPORTANT: this string must be 100% static — no dynamic values like dates.
+ * Any dynamic context (today's date, current month) is injected as a system
+ * message at the START of every apiMessages array instead (see server.ts),
+ * so the cached prefix here never changes and always gets the cache hit.
  */
 export function buildSystemPrompt(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1; // 1-based
-
   return `You are a property management assistant for two co-owners managing a portfolio of rental properties.
-Today's date is ${now.toISOString().split("T")[0]}. Current year: ${year}, current month: ${month}.
 
 Your job is to help manage rental properties, track rent payments, log repairs, and record utilities
 using natural language commands. You have access to tools to query and update the property database.

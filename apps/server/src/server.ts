@@ -686,6 +686,14 @@ app.post(
         (m) => ({ role: m.role, content: m.content })
       );
 
+      // Prepend a static-looking context message with today's date.
+      // The system prompt itself must be fully static for the prompt cache to
+      // hit every request — so dynamic values (date, month) go here instead.
+      const now = new Date();
+      const dateContext = `[Context: Today is ${now.toISOString().split("T")[0]}. Current year: ${now.getFullYear()}, current month: ${now.getMonth() + 1}.]`;
+      apiMessages.unshift({ role: "user", content: dateContext });
+      apiMessages.splice(1, 0, { role: "assistant", content: "Understood." });
+
       // Agentic loop: stream → collect text → handle tool_use → repeat
       // eslint-disable-next-line no-constant-condition
       while (true) {

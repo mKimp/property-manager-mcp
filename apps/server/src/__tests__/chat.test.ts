@@ -263,8 +263,9 @@ describe("POST /api/chat — Claude API SSE endpoint", () => {
     const callArgs = streamMockFn.mock.calls[0][0] as {
       messages: Array<{ role: string; content: string }>;
     };
-    expect(callArgs.messages).toHaveLength(3);
-    expect(callArgs.messages[2].content).toBe("second message");
+    // 2 prepended (date context + assistant ack) + 3 conversation = 5
+    expect(callArgs.messages).toHaveLength(5);
+    expect(callArgs.messages[4].content).toBe("second message");
   });
 
   it("uses claude-haiku-4-5-20251001 as the model", async () => {
