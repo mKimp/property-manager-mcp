@@ -39,7 +39,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        // html is intentionally excluded — index.html must always hit the network
+        // so Vercel Edge Middleware (Basic Auth) runs on every navigation request.
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^\/api\//,
