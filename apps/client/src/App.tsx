@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { ChatThread } from './components/ChatThread'
 import { ChatInput } from './components/ChatInput'
 import { useChat } from './hooks/useChat'
+import LoginScreen from './components/LoginScreen'
 
-function App() {
+// Inner component — useChat hook always called (no early return above it)
+function ChatApp() {
   const { messages, isStreaming, error, sendMessage, retry } = useChat()
 
   return (
@@ -38,6 +41,23 @@ function App() {
       <ChatInput onSubmit={sendMessage} isStreaming={isStreaming} />
     </div>
   )
+}
+
+function App() {
+  const [isAuthed, setIsAuthed] = useState(() => {
+    // No password configured (local dev) or already authed this session
+    const noPassword = !import.meta.env.VITE_APP_PASSWORD
+    const sessionAuthed = sessionStorage.getItem('pm_authed') === '1'
+    return noPassword || sessionAuthed
+  })
+
+  const handleLogin = () => {
+    sessionStorage.setItem('pm_authed', '1')
+    setIsAuthed(true)
+  }
+
+  if (!isAuthed) return <LoginScreen onLogin={handleLogin} />
+  return <ChatApp />
 }
 
 export default App
