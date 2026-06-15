@@ -42,7 +42,7 @@ export function ChatInput({ onSubmit, isStreaming }: ChatInputProps) {
       <textarea
         ref={textareaRef}
         rows={1}
-        placeholder={isStreaming ? 'Waiting for reply…' : 'Message Property Manager…'}
+        placeholder={isStreaming ? 'Replying' : 'You ask, I respond…'}
         disabled={isStreaming}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
